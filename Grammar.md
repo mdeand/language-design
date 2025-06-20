@@ -21,7 +21,7 @@ We use a simple Extended Backus-Naur Form (EBNF) notation; based on the one [spe
 
 This particular notation was chosen because it is:
 1. Mostly well-specified, by a respected organization.
-2. Syntactically very similar to common regular expression syntax.
+2. Syntactically very similar to common Regular Expression syntax.
 
 
 Each **Production** in the grammar defines one symbol, using the following form:
@@ -142,12 +142,12 @@ It is important to understand the relationship between the lexer (tokenizer) and
 - The **Parser** consumes this stream of tokens and builds a [[Concrete Syntax Tree|Concrete Syntax Tree (CST)]].
 - A [[Concrete Syntax Tree|CST]] can then easily be trivially parsed into various [[Abstract Syntax Tree|Abstract Syntax Trees (AST)]] specified for the Ribbon meta-language, the typed language it defines, and any embedded [[Domain Specific Languages|DSL]]s created by users.
 
-Therefore, once we move beyond the basic tokens defined in the [[#Lexical Grammar: Tokenization|Lexical Grammar]], the EBNF productions in this document define **syntactic grammar**. Some of these are part of the core CST syntax, like `Integer` and `Symbol`; others are part of both the meta-language and the typed language, such as the constant declaration operator `:=`; and a few are specific to the typed language, like the explicitly-typed constant declaration operator `: mut expression =`. In all cases, though, they describe the valid sequences of tokens that the parser accepts. A production should be interpreted from the parser's perspective of reading its token stream. 
+Therefore, once we move beyond the basic tokens defined in the [[#Lexical Grammar: Tokenization|Lexical Grammar]], the EBNF productions in this document define **syntactic grammar**. They describe the valid sequences of tokens that the parser accepts. A production should be interpreted from the parser's perspective of reading its token stream. 
 
 ##### Example
 
 ```ebnf
-Symbol ::= "'" Sequence (?!"'")
+Symbol ::= "'" Sequence (?! "'")
 ```
 
 This production describes the following parser behavior:
@@ -166,42 +166,28 @@ This section walks through the grammar definition production by production for e
 #### Contents
 
 * [[#Precedence Climbing]]
-	* [[#Precedence Table]]
 * [[#Lexical Grammar: Tokenization]]
-    * [[#Punctuation]]
-    * [[#Sequences]]
-    * [[#Layout]]
 * [[#Syntactic Grammar: Parsing]]
-	* [[#Atomic Forms: Classifying Tokens]]
-	* [[#Compound Expressions: Building the Tree]]
+* [[#Pattern Grammar]]
 
 
 #### Precedence Climbing
 
-The Ribbon grammar is designed around specific algorithms for lexical analysis and precedence climbing algorithms such as [[Pratt Parsing]]. This design choice was made in order to support robust language extension in the form of new syntax, including prefix and infix operators.
-
+While the grammar in this document is written to be formally unambiguous by encoding precedence directly into the productions, it is still designed with a precedence climbing parser (e.g., [[Pratt Parsing]]) in mind. This design choice supports robust language extension. For an extensible parser, a **precedence table** is often used as the direct source of truth rather than a fixed grammar hierarchy. The following table illustrates the intended precedence for the default operators:
 
 ##### Precedence Table
 
-A comprehensive listing of all operator precedences within the grammar. See below for their definitions.
-
-| Operator                           | Production         | Precedence | Associativity |
-| ---------------------------------- | ------------------ | ---------- | ------------- |
-| `Integer`*, etc literal terminals* | `literal`          | `max(i16)` | n/a           |
-| `Indent`                           | `block_expr`       | `max(i16)` | n/a           |
-| `fun`                              | `function_expr`    | `max(i16)` | n/a           |
-| `:=`,`: mut =`, `: mut _ =`        | `declaration_expr` | `min(i16)` | none          |
-| `=`                                | `assignment_expr`  | `min(i16)` | none          |
-| `Linebreak`, `;`                   | `sequence_expr`    | `min(i16)` | left          |
-
-In `Associativity`:
-* a value of `none` indicates the operator cannot be chained, for example:
-  `a = b = c` is not considered a well-formed expression.
-* `n/a` indicates associativity does not apply to the production, such as in the case of atomic, leaf-node values like `1`.
+| Precedence | Operator(s)                     | Production         | Associativity |
+| :--------: | ------------------------------- | ------------------ | ------------- |
+| 1          | `;`, `Linebreak`                | `sequence_expr`    | left          |
+| 2          | `=`, `:=`, `: mut =`, `: mut _ =`| `assignment_expr`, `declaration_expr` | none          |
+| ...        | *User-defined infix operators*  |                    |               |
+| 10         | Juxtaposition (e.g., `f x`)     | `application_expr` | left          |
+| 11 (Max)   | Literals, `(...)`, `fun`, etc.  | `primary_expr`     | n/a           |
 
 
 #### Lexical Grammar: Tokenization
-This section defines the raw tokens produced by the lexer. These are the most fundamental building blocks of the language, forming the token stream that is consumed by the parser.
+This section defines the raw tokens produced by the lexer. These are the most fundamental building blocks of the language.
 
 ##### Punctuation
 The following punctuation characters are explicitly reserved by the lexer and are treated as individual tokens. They are used to structure the code.
@@ -217,373 +203,191 @@ The lexer is minimalistic and groups many characters into a generic 'Sequence' t
 
 ```ebnf
 SequenceChar ::= [^\p{Z}\p{C}] - Punctuation
-```
-
-A `Sequence` is simply one or more `SequenceChar` characters.
-
-```ebnf
-Sequence ::= SequenceChar+
+Sequence     ::= SequenceChar+
 ```
 
 ##### Layout
-Ribbon's syntax is sensitive to layout. `Linebreak`s can terminate expressions, and changes in indentation are used to create nested blocks of code, much like in [[Python]].
-
-Therefore, the lexer is stateful and generates special tokens for these layout cues. Additionally, end of input must trigger the generation of one or more `Unindent` tokens if the final indentation level is greater than the base level.
-
-A `Linebreak` corresponds to a newline character that does not change the indentation level.
+Ribbon's syntax is sensitive to layout. The lexer must be stateful and generate special tokens for these layout cues. End of input must trigger the generation of one or more `Unindent` tokens if the final indentation level is greater than the base level.
 
 ```ebnf
-Linebreak ::= (\s*\n\s*)+
+Linebreak ::= (\s*\n\s*)+ [wfc: 3]
+Indent    ::= (\s*\n\s*)+ [wfc: 4]
+Unindent  ::= (\s*\n\s*)+ [wfc: 5]
 ```
 
 ```
-[wfc: indentation level after collecting last \s sequence must match level before Linebreak production]
-```
-
-An `Indent` token is generated for an increase in the current indentation level.
-
-```ebnf
-Indent ::= (\s*\n\s*)+
-```
-
-```
-[wfc: indentation level after collecting last \s sequence must be greater than before Indent production]
-```
-
-An `Unindent` token is generated for a decrease to a previous indentation level.
-
-```ebnf
-Unindent ::= (\s*\n\s*)+
-```
-
-```
-[wfc: indentation level after collecting last \s sequence must be equal to a stored level present before Unindent production]
+3. indentation level after collecting last \s sequence must match level before Linebreak production
+4. indentation level after collecting last \s sequence must be greater than before Indent production
+5. indentation level after collecting last \s sequence must be equal to a stored level present before Unindent production
 ```
 
 ---
 
 #### Syntactic Grammar: Parsing
-These productions describe how the parser consumes the token stream to build syntactic structures.
+These productions describe how the parser consumes the token stream to build syntactic structures. The grammar is presented as an unambiguous **precedence ladder**, from the lowest precedence (`expression`) to the highest (`primary_expr`).
 
-##### Atomic Forms: Classifying Tokens
-These productions define how the parser takes generic tokens from the lexer (like `Sequence` and `Punctuation`) and classifies them into more specific, meaningful atomic forms.
-
-###### Escapes
-`EscapeSequence`s can be used inside `String` and `Character` literals.
-
+##### Expression Hierarchy
 ```ebnf
-UnicodeEscape ::= "u{" [A-Fa-f0-9]{1,6} '}'
+expression           ::= sequence_expr
+sequence_expr        ::= assignment_expr (sequence_operator assignment_expr)*
+assignment_expr      ::= declaration_expr ('=' declaration_expr)?
+declaration_expr     ::= application_expr (declaration_operator application_expr)?
+application_expr     ::= primary_expr+
+primary_expr         ::= Identifier
+                       | literal
+                       | block_expr
+                       | function_expr
 ```
 
+##### Helper Productions
 ```ebnf
-AsciiEscape ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
-```
-
-```ebnf
-EscapePayload ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
-                | UnicodeEscape | AsciiEscape
-```
-
-```ebnf
-EscapeSequence ::= '\\' EscapePayload
-```
-
-###### Identifiers and Literals
-An `Identifier` is any `Sequence` that is not a literal. This broad definition is intentional and powerful. It means that traditional identifiers like `my_var`, [[LISP]]-style kebab case identifiers like `my-var`, keywords like `if`, and operators like `+` are all parsed from the same `Sequence` token. The distinction between them is handled by the parser.
-
-```ebnf
-Identifier ::= Sequence - literal
-```
-
-An `Integer` literal is parsed from a `Sequence` token. Alternative base notations are provided for convenience.
-
-```ebnf
-Integer ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
-```
-
-```
-[wfc: all forms must have at least one digit in at least one digit-accepting location; ie, '0b_' and '0x' are not well-formed]
-```
-
-A `Float` literal is a compound token sequence, formed from `Sequence` and `Punctuation` tokens, with an optional exponent. The grammar is intentionally kept strict here to avoid potential ambiguity in derived grammars, for example with [[Rust]]-like `my_tuple.0` member access. While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]]. 
-
-```ebnf
-Float ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)?
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-[wfc: all forms must have at least one digit in at least one digit-accepting location; ie `_._` and `_._e_` are not well-formed]
-```
-
-A `String` literal is parsed from a sequence of a `"` token, a `Sequence` token, and a final `"` token. It can contain various escape sequences.
-
-```ebnf
-String ::= '"' ( [^"\\] | EscapeSequence )* '"'
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-A `Character` literal is a single character or an escape sequence enclosed in single quotes.
-
-```ebnf
-Character ::= "'" ( [^'\\] | EscapeSequence ) "'"
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-A `Symbol` is a special literal, similar to symbols in [[LISP]] or [[Ruby]]. As detailed in the [[#Lexical vs. Syntactic Grammar]] section, its syntax is disambiguated from `Character` at parse time.
-
-```ebnf
-Symbol ::= "'" Sequence (?!"'")
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-##### Compound Expressions: Building the Tree
-These productions describe how the atomic forms are combined to create more complex syntactic structures, like expressions. They are defined starting with the most fundamental expressions and building up in layers of complexity, mirroring the operator-precedence parsing model used in the reference implementation.
-
-###### Primary Expressions
-This is the set of the most atomic expressions. They form the foundation of the precedence climbing model used by the parser, corresponding to the expressions handled by `nud` ([[Pratt Parsing|Null Denotation]]) parsing functions. These are the values and basic constructs that operators will act upon.
-
-`literal` is provided for definitional convenience, we simply group all our literal types into a single production.
-
-```ebnf
-literal ::= Integer | Float | String | Character | Symbol
-```
-
-The `block_expr` allows Ribbon code to be grouped in several ways: with parentheses `()`, braces `{}`, brackets `[]`, or by `Indent`/`Unindent`. The `expression` within a delimited block is optional to allow for empty constructs like `()`.
-
-```ebnf
-block_expr ::= Indent expression Unindent
-            | '(' expression? ')'
-            | '{' expression? '}'
-            | '[' expression? ']'
-```
-
-The `function_expr` production defines the structure of a functional abstraction, also known as anonymous functions or lambdas. These consist of the `fun` keyword, an `expression` that defines the function's parameters, a `.` separator, and another `expression` that constitutes the function's body.
-
-```ebnf
-function_expr ::= 'fun' expression '.' expression
-```
-
-> **Note**
-> `function_expr` is considered primary, rather than a prefix expression, because it has *maximum precedence*; it will always consume the rest of the current expression in order to form its body.
-
-Now we can define `primary_expr`. These represent anything that can be considered a standalone value or a base for operators to act upon. This includes any `literal`, an `Identifier`, a `block_expr`, or a `function_expr`.
-
-```ebnf
-primary_expr ::= Identifier | literal | block_expr | function_expr
-```
-
-[TODO: effect definition & import productions]
-[TODO: productions that are present by default in the typed language, ie type classes, structs etc]
-
-###### Infix Expressions
-Where `nud` functions handle expressions that stand on their own (like literals and identifiers), `led` functions ([[Pratt Parsing|Left Denotation]]) handle infix and postfix operators. They are called when the parser has already processed an expression (the "left-hand side") and encounters a token that operates on it.
-
-Our first and lowest-precedence infix operation is declaration. This is used to bind a value to a name.
-
-The `declaration_operator` defines the syntax for creating a new binding.
-
-```ebnf
+sequence_operator    ::= Linebreak | ';'
 declaration_operator ::= ':='
                        | ':' 'mut' '='
-                       | ':' 'mut' expression '='
+                       | ':' 'mut' expression '=' [wfc: 6]
+block_expr           ::= Indent expression Unindent
+                       | '(' expression? ')'
+                       | '{' expression? '}'
+                       | '[' expression? ']'
+function_expr        ::= 'fun' expression '.' expression
 ```
 
 ```
-[wfc: form 3 requires typed language]
+6. requires typed language
 ```
 
-A `declaration_expr` uses this operator to bind the result of an expression on the right to the expression on the left. This production has the lowest possible binding power, meaning it will be one of the last operators to be grouped during parsing. For example, in `my_var := 1 + 2`, the addition is evaluated before the declaration.
-
-The `declaration_expr` [TODO: currently] allows full expressions on both sides to support destructuring declarations, ie `(a, b) := (1, 2)`.
-
+##### Atomic Forms
+These productions define the leaf nodes of the expression grammar.
 ```ebnf
-declaration_expr ::= expression declaration_operator expression
+Identifier       ::= Sequence - literal
+literal          ::= Integer | Float | String | Character | Symbol
+Integer          ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ ) [wfc: 1]
+Float            ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)? [wfc: 1, 2]
+String           ::= '"' ( [^"\\] | EscapeSequence )* '"'
+Character        ::= "'" ( [^'\\] | EscapeSequence ) "'"
+Symbol           ::= "'" Sequence (?! "'")
+EscapeSequence   ::= '\\' EscapePayload
+EscapePayload    ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
+                   | UnicodeEscape | AsciiEscape
+UnicodeEscape    ::= "u{" [A-Fa-f0-9]{1,6} '}'
+AsciiEscape      ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
 ```
-[TODO: this can be refined to pattern grammars once that is fleshed out better]
 
-An `assignment_expr` uses a similar operator, but there is only one kind of assignment. This production also has the lowest possible binding power. It allows full expressions on both sides to support semantics like assignment into an array element or de-referenced pointer.
+```
+1. all forms must have at least one digit in at least one digit-accepting location
+2. all tokens must be source-adjacent
+```
 
+---
+
+### Pattern Grammar
+
+This grammar defines the `pattern` production for deconstructing values and expressions. It mirrors the expression grammar's unambiguous, precedence-ladder structure.
+
+*[[Refutability]]* (whether a pattern can fail) and *[[Exhaustiveness]]* (whether a set of patterns covers all possibilities) are semantic concerns handled by a later compiler pass.
+
+##### Pattern Hierarchy
 ```ebnf
-assignment_expr ::= expression '=' expression
+pattern             ::= or_pattern
+or_pattern          ::= as_pattern ('|' as_pattern)*
+as_pattern          ::= application_pattern ('@' application_pattern)?
+application_pattern ::= primary_pattern+
+primary_pattern     ::= 'quote' pattern_content
+                      | literal_pattern
+                      | binding_pattern
+                      | type_pattern
+                      | composite_pattern
+                      | unquote_pattern
 ```
 
-Declarations and assignments are of course useless without sequencing. A `sequence_expr` can be used to perform multiple expressions, one after the other; the result of the final expression is the result of the sequence expression. The `sequence_operator` is available under two terminals: a line ending with no indentation change, or a semicolon.
-
+##### Helper Productions
 ```ebnf
-sequence_operator ::= Linebreak | ';'
+pattern_content   ::= expression
+unquote_pattern   ::= '#' primary_pattern
 ```
 
-The `sequence_expr` is then defined with this operator, and two sub-`expression`s. This production also has the lowest possible binding power.
-
+##### Atomic Patterns
 ```ebnf
-sequence_expr ::= expression sequence_operator expression
+literal_pattern   ::= literal
+binding_pattern   ::= Identifier | '_'
+type_pattern      ::= "of" expression
+composite_pattern ::= '(' pattern_sequence? ')'
+                    | '[' pattern_sequence? ']'
+                    | '{' pattern_sequence? '}'
+pattern_sequence  ::= pattern_element (',' pattern_element)* ','?
+pattern_element   ::= pattern | rest_pattern [wfc: 7]
+rest_pattern      ::= '..' Identifier?
 ```
 
-An `expression` can be a `declaration_expr`, `assignment_expr`, a `sequence_expr`, or a `primary_expr`. We list the lower-precedence expressions first to indicate their lower rank in the precedence climbing hierarchy; see also the [[#Precedence Table|full list of precedences.]].
-
-```ebnf
-expression ::= declaration_expr
-             | assignment_expr
-             | sequence_expr
-             | primary_expr
 ```
-
-[TODO: additional productions present by default & in the meta language, ie +, -, ==, assignment, etc]
-[TODO: productions that are present by default in the typed language, ie type classes, structs etc]
+7. a `pattern_sequence` may contain at most one `rest_pattern`
+```
 
 ---
 
 ### Definition
 
 ```ebnf
-/* Precedences
-	NOTE: Currently, without consideration of this table the grammar below is formally ambiguous, due to left-recursive definitions. The two are meant to be taken together until such time as the full set of productions are well defined and we can create a cohesive hierarchy without left-recursion.
-	
-	literal          ::= max(i16), atomic
-	block_expr       ::= max(i16), atomic
-	function_expr    ::= max(i16), atomic (consumes avail. stream)
-    declaration_expr ::= min(i16), non-associative
-    assignment_expr  ::= min(i16), non-associative
-    sequence_expr    ::= min(i16), left associative
-*/
-
 /* == LEXICAL GRAMMAR == */
-
-/* Raw tokens produced by the lexer */
-Punctuation    ::= '(' | ')' | '{' | '}' | '['  | ']'
-                 | '.' | ',' | ';' | '`' | '\\' | '#'
-                 | '"' | "'"
+Punctuation    ::= '(' | ')' | '{' | '}' | '['  | ']' | '.' | ',' | ';' | '`' | '\\' | '#' | '"' | "'"
 SequenceChar   ::= [^\p{Z}\p{C}] - Punctuation
 Sequence       ::= SequenceChar+
 Linebreak      ::= (\s*\n\s*)+ [wfc: 3]
 Indent         ::= (\s*\n\s*)+ [wfc: 4]
 Unindent       ::= (\s*\n\s*)+ [wfc: 5]
 
-/* == SYNTACTIC GRAMMAR == */
-
-/* Atomic Forms (classifying tokens) */
-Identifier     ::= Sequence - literal
-UnicodeEscape  ::= "u{" [A-Fa-f0-9]{1,6} '}'
-AsciiEscape    ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
-EscapePayload  ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
-                 | UnicodeEscape | AsciiEscape
-EscapeSequence ::= '\\' EscapePayload
-Integer        ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ ) [wfc: 1]
-Float          ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)? [wfc: 1, 2]
-String         ::= '"' ( [^"\\] | EscapeSequence )* '"' [wfc: 2]
-Character      ::= "'" ( [^'\\] | EscapeSequence ) "'" [wfc: 2]
-Symbol         ::= "'" Sequence (?!"'") [wfc: 2]
-
-/* Compound Expressions (building the tree) */
-literal              ::= Integer | Float | String | Character | Symbol
-block_expr           ::= Indent expression Unindent
-                       | '(' expression? ')'
-                       | '{' expression? '}'
-                       | '[' expression? ']'
-function_expr        ::= 'fun' expression '.' expression
-primary_expr         ::= literal | Identifier | block_expr | function_expr
-declaration_operator ::= ':='
-                       | ':' 'mut' '='
-                       | ':' 'mut' expression '=' [wfc: 6]
-declaration_expr     ::= expression declaration_operator expression
-assignment_expr      ::= expression '=' expression
+/* == SYNTACTIC GRAMMAR (EXPRESSIONS) == */
+/* Hierarchy */
+expression           ::= sequence_expr
+sequence_expr        ::= assignment_expr (sequence_operator assignment_expr)*
+assignment_expr      ::= declaration_expr ('=' declaration_expr)?
+declaration_expr     ::= application_expr (declaration_operator application_expr)?
+application_expr     ::= primary_expr+
+primary_expr         ::= Identifier | literal | block_expr | function_expr
+/* Helpers */
 sequence_operator    ::= Linebreak | ';'
-sequence_expr        ::= expression sequence_operator expression
-expression           ::= declaration_expr
-                       | assignment_expr
-                       | sequence_expr
-                       | primary_expr
+declaration_operator ::= ':=' | ':' 'mut' '=' | ':' 'mut' expression '=' [wfc: 6]
+block_expr           ::= Indent expression Unindent | '(' expression? ')' | '{' expression? '}' | '[' expression? ']'
+function_expr        ::= 'fun' expression '.' expression
+/* Atomics */
+Identifier           ::= Sequence - literal
+literal              ::= Integer | Float | String | Character | Symbol
+Integer              ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ ) [wfc: 1]
+Float                ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)? [wfc: 1, 2]
+String               ::= '"' ( [^"\\] | EscapeSequence )* '"'
+Character            ::= "'" ( [^'\\] | EscapeSequence ) "'"
+Symbol               ::= "'" Sequence (?! "'")
+EscapeSequence       ::= '\\' EscapePayload
+EscapePayload        ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0' | UnicodeEscape | AsciiEscape
+UnicodeEscape        ::= "u{" [A-Fa-f0-9]{1,6} '}'
+AsciiEscape          ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
+
+/* == SYNTACTIC GRAMMAR (PATTERNS) == */
+/* Hierarchy */
+pattern             ::= or_pattern
+or_pattern          ::= as_pattern ('|' as_pattern)*
+as_pattern          ::= application_pattern ('@' application_pattern)?
+application_pattern ::= primary_pattern+
+primary_pattern     ::= 'quote' pattern_content | literal_pattern | binding_pattern | type_pattern | composite_pattern | unquote_pattern
+/* Helpers */
+pattern_content     ::= expression
+unquote_pattern     ::= '#' primary_pattern
+/* Atomics */
+literal_pattern     ::= literal
+binding_pattern     ::= Identifier | '_'
+type_pattern        ::= "of" expression
+composite_pattern   ::= '(' pattern_sequence? ')' | '[' pattern_sequence? ']' | '{' pattern_sequence? '}'
+pattern_sequence    ::= pattern_element (',' pattern_element)* ','?
+pattern_element     ::= pattern | rest_pattern [wfc: 7]
+rest_pattern        ::= '..' Identifier?
 
 /* Well-formedness Constraints
-	NOTE: Well-formedness in this context means that the associated formal language presented must apply to the associated production match for the match to be accepted.
-	
-    1. all forms must have at least one digit in at least one digit-accepting location; '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
+    1. all forms must have at least one digit in at least one digit-accepting location
     2. all tokens must be source-adjacent
     3. indentation level after collecting last \s sequence must match level before production
     4. indentation level after collecting last \s sequence must be greater than before production
     5. indentation level after collecting last \s sequence must be equal to a stored level present before production
     6. requires typed language
+    7. a `pattern_sequence` may contain at most one `rest_pattern`
 */
-```
-
-
-[Patterns sketch, WIP]
-```ebnf
-/* == PATTERN GRAMMAR == */
-
-/*
-    The top-level `pattern` production.
-    The hierarchy mirrors the `expression` grammar.
-*/
-pattern ::= or_pattern
-
-/*
-    `or_pattern` is the lowest precedence operator, allowing alternatives.
-    Example: `(quote 1) | (quote 2)`
-*/
-or_pattern ::= as_pattern ('|' as_pattern)*
-
-/*
-    `as_pattern` binds a pattern to a name. Higher precedence than `|`.
-    Example: `x @ quote [_, ...]`
-*/
-as_pattern ::= Identifier ('@' quote_pattern)?
-
-/*
-    The max-bp `quote_pattern` is the main entry point for structural matching.
-    It can be a quoted block of code or a primary pattern form.
-*/
-quote_pattern ::= 'quote' pattern_content
-                | primary_pattern
-
-/* The min-bp unquote operator. */
-unquote_pattern ::= '#' primary_pattern
-
-/*
-    `pattern_content` is a special parsing mode for the tokens following `quote`.
-    It parses an expression-like structure, but builds a Pattern AST.
-    The `#` unquote operator has the highest precedence within this mode.
-*/
-pattern_content ::= expression
-
-/*
-    The fundamental building blocks of patterns. These have the highest precedence.
-*/
-primary_pattern ::= literal_pattern
-                  | binding_pattern
-                  | type_pattern
-                  | composite_pattern
-                  | unquote_pattern
-
-/* Matches an exact value. */
-literal_pattern ::= literal
-
-/* Captures a value into an identifier or discards it. */
-binding_pattern ::= Identifier | '_'
-
-/* Matches a value based on type constraints. */
-type_pattern ::= "of" expression
-
-/* Deconstructs data structures using delimiters. */
-composite_pattern ::= '(' pattern_sequence? ')'  /* tuple_pattern */
-                    | '[' pattern_sequence? ']'  /* array_pattern */
-                    | '{' pattern_sequence? '}'  /* struct_pattern */
-
-/* The contents of a composite pattern. */
-pattern_element ::= pattern | rest_pattern
-pattern_sequence ::= pattern_element (',' pattern_element)* ','? [wfc: may contain at most one `rest_pattern`]
-
-/* Captures the remaining elements of a sequence. */
-RestOperator ::= ".." [wfc: all tokens must be source adjacent]
-rest_pattern ::= RestOperator Identifier?
 ```
