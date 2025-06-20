@@ -10,6 +10,8 @@ This is the canonical grammar definition for Ribbon. Because Ribbon is a highly 
 	* [[#Character Classes]]
 	* [[#Lexical vs. Syntactic Grammar]]
 + [[#Grammar Walkthrough]]
+	* [[#Lexical Grammar: Tokenization]]
+	* [[#Syntactic Grammar: Parsing]]
 + [[#Definition]]
 
 ### Format
@@ -19,7 +21,7 @@ We use a simple Extended Backus-Naur Form (EBNF) notation; based on the one [spe
 
 This particular notation was chosen because it is:
 1. Mostly well-specified, by a respected organization.
-2. Syntactically very similar to common Regular Expression syntax.
+2. Syntactically very similar to common regular expression syntax.
 
 
 Each **Production** in the grammar defines one symbol, using the following form:
@@ -131,8 +133,8 @@ More information about character classes can be found on [MDN](https://developer
 It is important to understand the relationship between the lexer (tokenizer) and the parser in the context of this grammar. Ribbon's design deliberately keeps the lexer's role minimal.
 
 - The **Lexer** performs simple tokenization. It scans the source text and breaks it into a linear stream of the most basic tokens possible:
-  * **Punctuation**: characters the lexer reserves as single-character tokens, such as `[`, and `;`.
-  * **Linebreak**: any number of newlines that do not change the indentation level.
+  * **Punctuation** - characters the lexer reserves as single-character tokens, such as `[`, and `;`.
+  * **Linebreak** - any number of newlines that do not change the indentation level.
   * **Indent** - any number of newlines resulting in a new, deeper level of indentation
   * **Unindent** - any number of newlines resulting in a lower but existing level of indentation
   * **Sequence** - operators, identifiers, literals, essentially anything that is not one of the above
@@ -140,7 +142,7 @@ It is important to understand the relationship between the lexer (tokenizer) and
 - The **Parser** consumes this stream of tokens and builds a [[Concrete Syntax Tree|Concrete Syntax Tree (CST)]].
 - A [[Concrete Syntax Tree|CST]] can then easily be trivially parsed into various [[Abstract Syntax Tree|Abstract Syntax Trees (AST)]] specified for the Ribbon meta-language, the typed language it defines, and any embedded [[Domain Specific Languages|DSL]]s created by users.
 
-Therefore, once we move beyond the basic terminals for `Punctuation`, `Sequence`s, and space handling, the EBNF productions in this document define **syntactic grammar**. Some of these are part of the core CST syntax, like `Integer` and `Symbol`; others are part of both the meta-language and the typed language, such as the constant declaration operator `:=`; and a few are specific to the typed language, like the explicitly-typed constant declaration operator `: mut expression =`. In all cases, though, they describe the valid sequences of tokens that the parser accepts. A production should be interpreted from the parser's perspective of reading its token stream. 
+Therefore, once we move beyond the basic tokens defined in the [[#Lexical Grammar: Tokenization|Lexical Grammar]], the EBNF productions in this document define **syntactic grammar**. Some of these are part of the core CST syntax, like `Integer` and `Symbol`; others are part of both the meta-language and the typed language, such as the constant declaration operator `:=`; and a few are specific to the typed language, like the explicitly-typed constant declaration operator `: mut expression =`. In all cases, though, they describe the valid sequences of tokens that the parser accepts. A production should be interpreted from the parser's perspective of reading its token stream. 
 
 ##### Example
 
@@ -161,20 +163,17 @@ This approach allows the grammar to precisely specify parsing logic, including l
 
 This section walks through the grammar definition production by production for easier understanding.
 
-
 #### Contents
 
 * [[#Precedence Climbing]]
 	* [[#Precedence Table]]
-* [[#Terminal Productions]]
+* [[#Lexical Grammar: Tokenization]]
     * [[#Punctuation]]
-    * [[#Names and Operators]]
-    * [[#Escapes]]
-    * [[#Literals]]
+    * [[#Sequences]]
     * [[#Layout]]
-* [[#Non-Terminal Productions]]
-	* [[#Primary Expressions]]
-	* [[#Infix Expressions]]
+* [[#Syntactic Grammar: Parsing]]
+	* [[#Atomic Forms: Classifying Tokens]]
+	* [[#Compound Expressions: Building the Tree]]
 
 
 #### Precedence Climbing
@@ -198,14 +197,10 @@ A comprehensive listing of all operator precedences within the grammar. See belo
 In `Associativity`, a value of `none` indicates the operator cannot be chained, for example:
 `a = b = c` is not considered a well-formed expression.
 
-
-#### Terminal Productions
-
-These productions define the *lexical* building blocks of the language.
-
+#### Lexical Grammar: Tokenization
+This section defines the raw tokens produced by the lexer. These are the most fundamental building blocks of the language, forming the token stream that is consumed by the parser.
 
 ##### Punctuation
-
 The following punctuation characters are explicitly reserved by the lexer and are treated as individual tokens. They are used to structure the code.
 
 ```ebnf
@@ -214,9 +209,7 @@ Punctuation ::= '(' | ')' | '{' | '}' | '['  | ']'
               | '"' | "'"
 ```
 
-
-##### Names and Operators
-
+##### Sequences
 The lexer is minimalistic and groups many characters into a generic 'Sequence' token. The parser then introspects these sequences to differentiate between things like identifiers and integers. A `SequenceChar` is any character that is not whitespace, a control character, or a reserved punctuation mark.
 
 ```ebnf
@@ -229,98 +222,12 @@ A `Sequence` is simply one or more `SequenceChar` characters.
 Sequence ::= SequenceChar+
 ```
 
-An `Identifier` is any `Sequence` that is not a [[#Literals|literal]]. This broad definition is intentional and powerful. It means that traditional identifiers like `my_var`, [[LISP]]-style kebab case identifiers like `my-var`, keywords like `if`, and operators like `+` are all [[Lexical Analysis|lexically analyzed]] using the same rule. The distinction between them is handled later by the parser.
-
-```ebnf
-Identifier ::= Sequence - literal
-```
-
-
-##### Escapes
-
-`EscapeSequence`s can be used inside `String` and `Character` literals.
-
-```ebnf
-UnicodeEscape ::= "u{" [A-Fa-f0-9]{1,6} '}'
-```
-
-```ebnf
-AsciiEscape ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
-```
-
-```ebnf
-EscapePayload ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
-                | UnicodeEscape | AsciiEscape
-```
-
-```ebnf
-EscapeSequence ::= '\\' EscapePayload
-```
-
-
-##### Literals
-
-An `Integer` literal is, at its most basic, a sequence of one or more Unicode decimal digits. Alternative base notations are provided for convenience.
-
-```ebnf
-Integer ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
-```
-
-```
-[wfc: all forms must have at least one digit in at least one digit-accepting location; ie, '0b_' and '0x' are not well-formed]
-```
-
-A `Float` literal is a compound token sequence, formed from decimal literals and the dot punctuation, with an optional exponent.
-
-While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]], so assuming we provide a similarly quality level in new user on-boarding, it should be totally manageable. While other forms may seem a minor convenience that should "obviously" be added, the grammar is intentionally kept strict here so as to avoid potential ambiguity in derived grammars. For example, [[Rust]]-like `my_tuple.0` member access requires this level of precision.
-
-```ebnf
-Float ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)?
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-[wfc: all forms must have at least one digit in at least one digit-accepting location; ie `_._` and `_._e_` are not well-formed]
-```
-
-
-A `String` literal is a sequence of characters enclosed in double quotes. It can contain various escape sequences.
-
-```ebnf
-String ::= '"' ( [^"\\] | EscapeSequence )* '"'
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-A `Character` literal is a single character or an escape sequence enclosed in single quotes. It can contain various escape sequences.
-
-```ebnf
-Character ::= "'" ( [^'\\] | EscapeSequence ) "'"
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-A `Symbol` is a special literal, similar to symbols in [[LISP]] or [[Ruby]]. It is represented by a sequence of characters preceded by a single quote, where the content is longer than a single character or does not have a closing quote.
-
-```ebnf
-Symbol ::= "'" Sequence (?!"'")
-```
-
-```
-[wfc: all tokens must be source-adjacent]
-```
-
-A `Character` is a single character or escape sequence enclosed in a *matching pair* of single quotes (e.g., `'c'`), while a `Symbol` is denoted by a single leading quote followed by any `Sequence` that is not enclosed by a trailing quote (e.g., `'my-symbol`). As quotes cannot be part of a `Sequence`, they are easily differentiated mechanically.
-
 ##### Layout
+Ribbon's syntax is sensitive to layout. `Linebreak`s can terminate expressions, and changes in indentation are used to create nested blocks of code, much like in [[Python]].
 
-Ribbon's syntax is sensitive to layout. `Linebreak`s can terminate expressions, and changes in indentation are used to create nested blocks of code, much like in [[Python]]. The lexer generates special tokens for these layout cues.
+Therefore, the lexer is stateful and generates special tokens for these layout cues. Additionally, end of input must trigger the generation of one or more `Unindent` tokens if the final indentation level is greater than the base level.
 
-A `Linebreak` corresponds to a newline character.
+A `Linebreak` corresponds to a newline character that does not change the indentation level.
 
 ```ebnf
 Linebreak ::= (\s*\n\s*)+
@@ -350,17 +257,96 @@ Unindent ::= (\s*\n\s*)+
 [wfc: indentation level after collecting last \s sequence must be equal to a stored level present before Unindent production]
 ```
 
-**Note that `Linebreak`, `Indent`, and `Unindent` share an EBNF definition.** We must rely completely on the well-formedness constraints for our mechanical specification here; the summary of which is that the lexer must be stateful, and is responsible for tracking the current indentation level. It emits the appropriate token by comparing the new line's indentation with the previous level(s) on the indentation stack.
-
 ---
 
-#### Non-Terminal Productions
+#### Syntactic Grammar: Parsing
+These productions describe how the parser consumes the token stream to build syntactic structures.
 
-These productions describe how the terminal tokens defined in the previous section are combined to form more complex syntactic structures, like expressions. They are defined starting with the most fundamental expressions and building up in layers of complexity, mirroring the operator-precedence parsing model used in the reference implementation.
+##### Atomic Forms: Classifying Tokens
+These productions define how the parser takes generic tokens from the lexer (like `Sequence` and `Punctuation`) and classifies them into more specific, meaningful atomic forms.
 
+###### Escapes
+`EscapeSequence`s can be used inside `String` and `Character` literals.
 
-##### Primary Expressions
+```ebnf
+UnicodeEscape ::= "u{" [A-Fa-f0-9]{1,6} '}'
+```
 
+```ebnf
+AsciiEscape ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
+```
+
+```ebnf
+EscapePayload ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
+                | UnicodeEscape | AsciiEscape
+```
+
+```ebnf
+EscapeSequence ::= '\\' EscapePayload
+```
+
+###### Identifiers and Literals
+An `Identifier` is any `Sequence` that is not a literal. This broad definition is intentional and powerful. It means that traditional identifiers like `my_var`, [[LISP]]-style kebab case identifiers like `my-var`, keywords like `if`, and operators like `+` are all parsed from the same `Sequence` token. The distinction between them is handled by the parser.
+
+```ebnf
+Identifier ::= Sequence - literal
+```
+
+An `Integer` literal is parsed from a `Sequence` token. Alternative base notations are provided for convenience.
+
+```ebnf
+Integer ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
+```
+
+```
+[wfc: all forms must have at least one digit in at least one digit-accepting location; ie, '0b_' and '0x' are not well-formed]
+```
+
+A `Float` literal is a compound token sequence, formed from `Sequence` and `Punctuation` tokens, with an optional exponent. While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]]. The grammar is intentionally kept strict here to avoid potential ambiguity in derived grammars, for example with [[Rust]]-like `my_tuple.0` member access.
+
+```ebnf
+Float ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)?
+```
+
+```
+[wfc: all tokens must be source-adjacent]
+[wfc: all forms must have at least one digit in at least one digit-accepting location; ie `_._` and `_._e_` are not well-formed]
+```
+
+A `String` literal is parsed from a sequence of a `"` token, a `Sequence` token, and a final `"` token. It can contain various escape sequences.
+
+```ebnf
+String ::= '"' ( [^"\\] | EscapeSequence )* '"'
+```
+
+```
+[wfc: all tokens must be source-adjacent]
+```
+
+A `Character` literal is a single character or an escape sequence enclosed in single quotes.
+
+```ebnf
+Character ::= "'" ( [^'\\] | EscapeSequence ) "'"
+```
+
+```
+[wfc: all tokens must be source-adjacent]
+```
+
+A `Symbol` is a special literal, similar to symbols in [[LISP]] or [[Ruby]]. As detailed in the [[#Lexical vs. Syntactic Grammar]] section, its syntax is disambiguated from `Character` at parse time.
+
+```ebnf
+Symbol ::= "'" Sequence (?!"'")
+```
+
+```
+[wfc: all tokens must be source-adjacent]
+```
+
+##### Compound Expressions: Building the Tree
+These productions describe how the atomic forms are combined to create more complex syntactic structures, like expressions. They are defined starting with the most fundamental expressions and building up in layers of complexity, mirroring the operator-precedence parsing model used in the reference implementation.
+
+###### Primary Expressions
 This is the set of the most atomic expressions. They form the foundation of the precedence climbing model used by the parser, corresponding to the expressions handled by `nud` ([[Pratt Parsing|Null Denotation]]) parsing functions. These are the values and basic constructs that operators will act upon.
 
 `literal` is provided for definitional convenience, we simply group all our literal types into a single production.
@@ -396,9 +382,7 @@ primary_expr ::= Identifier | literal | block_expr | function_expr
 [TODO: effect definition & import productions]
 [TODO: productions that are present by default in the typed language, ie type classes, structs etc]
 
-
-##### Infix Expressions
-
+###### Infix Expressions
 Where `nud` functions handle expressions that stand on their own (like literals and identifiers), `led` functions ([[Pratt Parsing|Left Denotation]]) handle infix and postfix operators. They are called when the parser has already processed an expression (the "left-hand side") and encounters a token that operates on it.
 
 Our first and lowest-precedence infix operation is declaration. This is used to bind a value to a name.
@@ -415,14 +399,7 @@ declaration_operator ::= ':='
 [wfc: form 3 requires typed language]
 ```
 
-A `declaration_expr` uses this operator to bind the result of an expression on the right to the expression on the left. Within the meta-language, which is untyped, we provide the following two forms of this production:
-
-*   The `:=` form creates an immutable binding.
-*   The `: mut =` form creates a mutable binding, allowing its value to be changed later with the assignment operator.
-
-In the full, typed language, the additional form `: mut expression =` is available, for the purposes of explicitly providing the type of the declaration.
-
-This production has the lowest possible binding power, meaning it will be one of the last operators to be grouped during parsing. For example, in `my_var := 1 + 2`, the addition is evaluated before the declaration.
+A `declaration_expr` uses this operator to bind the result of an expression on the right to the expression on the left. This production has the lowest possible binding power, meaning it will be one of the last operators to be grouped during parsing. For example, in `my_var := 1 + 2`, the addition is evaluated before the declaration.
 
 The `declaration_expr` allows full expressions on both sides to support destructuring declarations, ie `(a, b) := (1, 2)`.
 
@@ -437,11 +414,7 @@ An `assignment_expr` uses a similar operator, but there is only one kind of assi
 assignment_expr ::= expression '=' expression
 ```
 
-Declarations and assignments are of course useless without sequencing.
-
-A `sequence_expr` can be used to perform multiple expressions, one after the other; the result of the final expression is the result of the sequence expression.
-
-The `sequence_operator` is available under two terminals: a line ending with no indentation change, or a semicolon.
+Declarations and assignments are of course useless without sequencing. A `sequence_expr` can be used to perform multiple expressions, one after the other; the result of the final expression is the result of the sequence expression. The `sequence_operator` is available under two terminals: a line ending with no indentation change, or a semicolon.
 
 ```ebnf
 sequence_operator ::= Linebreak | ';'
@@ -463,27 +436,16 @@ expression ::= declaration_expr
 ```
 
 [TODO: additional productions present by default & in the meta language, ie +, -, ==, assignment, etc]
-
 [TODO: productions that are present by default in the typed language, ie type classes, structs etc]
-
 
 ---
 
 ### Definition
 
 ```ebnf
-/* Well-formedness Constraints:
-    1. all forms must have at least one digit in at least one digit-accepting location;
-       '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
-    2. all tokens must be source-adjacent
-    3. indentation level after collecting last \s sequence must match level before production
-    4. indentation level after collecting last \s sequence must be greater than before production
-    5. indentation level after collecting last \s sequence must be equal to a stored level present before production
-    6. requires typed language
-*/
-
-/* Precedences:
-	NOTE: currently; without consideration of this table, the grammar is formerly abiguous. They are meant to be taken together until such time as the full set of sub-productions are well defined and we can create a cohesive hierarchy without left-recursion.
+/* Precedences
+	NOTE: Currently, without consideration of this table the grammar below is formally ambiguous. The two are meant to be taken together until such time as the full set of productions are well defined and we can create a cohesive hierarchy without left-recursion.
+	
 	literal          ::= max(i16), not associative
 	block_expr       ::= max(i16), not associative
 	function_expr    ::= max(i16), not associative
@@ -492,12 +454,21 @@ expression ::= declaration_expr
     sequence_expr    ::= min(i16), left associative
 */
 
-/* Terminals */
+/* == LEXICAL GRAMMAR == */
+
+/* Raw tokens produced by the lexer */
 Punctuation    ::= '(' | ')' | '{' | '}' | '['  | ']'
                  | '.' | ',' | ';' | '`' | '\\' | '#'
                  | '"' | "'"
 SequenceChar   ::= [^\p{Z}\p{C}] - Punctuation
 Sequence       ::= SequenceChar+
+Linebreak      ::= (\s*\n\s*)+ [wfc: 3]
+Indent         ::= (\s*\n\s*)+ [wfc: 4]
+Unindent       ::= (\s*\n\s*)+ [wfc: 5]
+
+/* == SYNTACTIC GRAMMAR == */
+
+/* Atomic Forms (classifying tokens) */
 Identifier     ::= Sequence - literal
 UnicodeEscape  ::= "u{" [A-Fa-f0-9]{1,6} '}'
 AsciiEscape    ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
@@ -509,20 +480,15 @@ Float          ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)? [wfc: 1, 2]
 String         ::= '"' ( [^"\\] | EscapeSequence )* '"' [wfc: 2]
 Character      ::= "'" ( [^'\\] | EscapeSequence ) "'" [wfc: 2]
 Symbol         ::= "'" Sequence (?!"'") [wfc: 2]
-Linebreak      ::= (\s*\n\s*)+ [wfc: 3]
-Indent         ::= (\s*\n\s*)+ [wfc: 4]
-Unindent       ::= (\s*\n\s*)+ [wfc: 5]
 
-/* Primary Expressions */
-literal       ::= Integer | Float | String | Character | Symbol
-block_expr    ::= Indent expression Unindent
-                | '(' expression? ')'
-                | '{' expression? '}'
-                | '[' expression? ']'
-function_expr ::= 'fun' expression '.' expression
-primary_expr  ::= literal | Identifier | block_expr | function_expr
-
-/* Infix Expressions */
+/* Compound Expressions (building the tree) */
+literal              ::= Integer | Float | String | Character | Symbol
+block_expr           ::= Indent expression Unindent
+                       | '(' expression? ')'
+                       | '{' expression? '}'
+                       | '[' expression? ']'
+function_expr        ::= 'fun' expression '.' expression
+primary_expr         ::= literal | Identifier | block_expr | function_expr
 declaration_operator ::= ':='
                        | ':' 'mut' '='
                        | ':' 'mut' expression '=' [wfc: 6]
@@ -534,4 +500,16 @@ expression           ::= declaration_expr
                        | assignment_expr
                        | sequence_expr
                        | primary_expr
+
+/* Well-formedness Constraints
+	NOTE: Well-formedness in this context means that the associated formal language presented must apply to the associated production match for the match to be accepted.
+	
+    1. all forms must have at least one digit in at least one digit-accepting location;
+       '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
+    2. all tokens must be source-adjacent
+    3. indentation level after collecting last \s sequence must match level before production
+    4. indentation level after collecting last \s sequence must be greater than before production
+    5. indentation level after collecting last \s sequence must be equal to a stored level present before production
+    6. requires typed language
+*/
 ```
