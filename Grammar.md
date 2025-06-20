@@ -187,15 +187,18 @@ A comprehensive listing of all operator precedences within the grammar. See belo
 
 | Operator                           | Production         | Precedence | Associativity |
 | ---------------------------------- | ------------------ | ---------- | ------------- |
-| `Integer`*, etc literal terminals* | `literal`          | `max(i16)` | none          |
-| `Indent`                           | `block_expr`       | `max(i16)` | none          |
-| `fun`                              | `function_expr`    | `max(i16)` | none          |
+| `Integer`*, etc literal terminals* | `literal`          | `max(i16)` | n/a           |
+| `Indent`                           | `block_expr`       | `max(i16)` | n/a           |
+| `fun`                              | `function_expr`    | `max(i16)` | n/a           |
 | `:=`,`: mut =`, `: mut _ =`        | `declaration_expr` | `min(i16)` | none          |
 | `=`                                | `assignment_expr`  | `min(i16)` | none          |
 | `Linebreak`, `;`                   | `sequence_expr`    | `min(i16)` | left          |
 
-In `Associativity`, a value of `none` indicates the operator cannot be chained, for example:
-`a = b = c` is not considered a well-formed expression.
+In `Associativity`:
+* a value of `none` indicates the operator cannot be chained, for example:
+  `a = b = c` is not considered a well-formed expression.
+* `n/a` indicates associativity does not apply to the production, such as in the case of atomic, leaf-node values like `1`.
+
 
 #### Lexical Grammar: Tokenization
 This section defines the raw tokens produced by the lexer. These are the most fundamental building blocks of the language, forming the token stream that is consumed by the parser.
@@ -302,7 +305,7 @@ Integer ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
 [wfc: all forms must have at least one digit in at least one digit-accepting location; ie, '0b_' and '0x' are not well-formed]
 ```
 
-A `Float` literal is a compound token sequence, formed from `Sequence` and `Punctuation` tokens, with an optional exponent. While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]]. The grammar is intentionally kept strict here to avoid potential ambiguity in derived grammars, for example with [[Rust]]-like `my_tuple.0` member access.
+A `Float` literal is a compound token sequence, formed from `Sequence` and `Punctuation` tokens, with an optional exponent. The grammar is intentionally kept strict here to avoid potential ambiguity in derived grammars, for example with [[Rust]]-like `my_tuple.0` member access. While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]]. 
 
 ```ebnf
 Float ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)?
@@ -444,13 +447,13 @@ expression ::= declaration_expr
 
 ```ebnf
 /* Precedences
-	NOTE: Currently, without consideration of this table the grammar below is formally ambiguous. The two are meant to be taken together until such time as the full set of productions are well defined and we can create a cohesive hierarchy without left-recursion.
+	NOTE: Currently, without consideration of this table the grammar below is formally ambiguous, due to left-recursive definitions. The two are meant to be taken together until such time as the full set of productions are well defined and we can create a cohesive hierarchy without left-recursion.
 	
-	literal          ::= max(i16), not associative
-	block_expr       ::= max(i16), not associative
-	function_expr    ::= max(i16), not associative
-    declaration_expr ::= min(i16), not associative
-    assignment_expr  ::= min(i16), not associative
+	literal          ::= max(i16), atomic
+	block_expr       ::= max(i16), atomic
+	function_expr    ::= max(i16), atomic (consumes avail. stream)
+    declaration_expr ::= min(i16), non-associative
+    assignment_expr  ::= min(i16), non-associative
     sequence_expr    ::= min(i16), left associative
 */
 
