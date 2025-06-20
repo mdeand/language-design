@@ -404,14 +404,14 @@ declaration_operator ::= ':='
 
 A `declaration_expr` uses this operator to bind the result of an expression on the right to the expression on the left. This production has the lowest possible binding power, meaning it will be one of the last operators to be grouped during parsing. For example, in `my_var := 1 + 2`, the addition is evaluated before the declaration.
 
-The `declaration_expr` allows full expressions on both sides to support destructuring declarations, ie `(a, b) := (1, 2)`.
+The `declaration_expr` [TODO: currently] allows full expressions on both sides to support destructuring declarations, ie `(a, b) := (1, 2)`.
 
 ```ebnf
 declaration_expr ::= expression declaration_operator expression
 ```
 [TODO: this can be refined to pattern grammars once that is fleshed out better]
 
-An `assignment_expr` uses a similar operator, but there is only one kind of assignment. This production also has the lowest possible binding power.
+An `assignment_expr` uses a similar operator, but there is only one kind of assignment. This production also has the lowest possible binding power. It allows full expressions on both sides to support semantics like assignment into an array element or de-referenced pointer.
 
 ```ebnf
 assignment_expr ::= expression '=' expression
@@ -507,12 +507,83 @@ expression           ::= declaration_expr
 /* Well-formedness Constraints
 	NOTE: Well-formedness in this context means that the associated formal language presented must apply to the associated production match for the match to be accepted.
 	
-    1. all forms must have at least one digit in at least one digit-accepting location;
-       '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
+    1. all forms must have at least one digit in at least one digit-accepting location; '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
     2. all tokens must be source-adjacent
     3. indentation level after collecting last \s sequence must match level before production
     4. indentation level after collecting last \s sequence must be greater than before production
     5. indentation level after collecting last \s sequence must be equal to a stored level present before production
     6. requires typed language
 */
+```
+
+
+[Patterns sketch, WIP]
+```ebnf
+/* == PATTERN GRAMMAR == */
+
+/*
+    The top-level `pattern` production.
+    The hierarchy mirrors the `expression` grammar.
+*/
+pattern ::= or_pattern
+
+/*
+    `or_pattern` is the lowest precedence operator, allowing alternatives.
+    Example: `(quote 1) | (quote 2)`
+*/
+or_pattern ::= as_pattern ('|' as_pattern)*
+
+/*
+    `as_pattern` binds a pattern to a name. Higher precedence than `|`.
+    Example: `x @ quote [_, ...]`
+*/
+as_pattern ::= Identifier ('@' quote_pattern)?
+
+/*
+    The max-bp `quote_pattern` is the main entry point for structural matching.
+    It can be a quoted block of code or a primary pattern form.
+*/
+quote_pattern ::= 'quote' pattern_content
+                | primary_pattern
+
+/* The min-bp unquote operator. */
+unquote_pattern ::= '#' primary_pattern
+
+/*
+    `pattern_content` is a special parsing mode for the tokens following `quote`.
+    It parses an expression-like structure, but builds a Pattern AST.
+    The `#` unquote operator has the highest precedence within this mode.
+*/
+pattern_content ::= expression
+
+/*
+    The fundamental building blocks of patterns. These have the highest precedence.
+*/
+primary_pattern ::= literal_pattern
+                  | binding_pattern
+                  | type_pattern
+                  | composite_pattern
+                  | unquote_pattern
+
+/* Matches an exact value. */
+literal_pattern ::= literal
+
+/* Captures a value into an identifier or discards it. */
+binding_pattern ::= Identifier | '_'
+
+/* Matches a value based on type constraints. */
+type_pattern ::= "of" expression
+
+/* Deconstructs data structures using delimiters. */
+composite_pattern ::= '(' pattern_sequence? ')'  /* tuple_pattern */
+                    | '[' pattern_sequence? ']'  /* array_pattern */
+                    | '{' pattern_sequence? '}'  /* struct_pattern */
+
+/* The contents of a composite pattern. */
+pattern_element ::= pattern | rest_pattern
+pattern_sequence ::= pattern_element (',' pattern_element)* ','? [wfc: may contain at most one `rest_pattern`]
+
+/* Captures the remaining elements of a sequence. */
+RestOperator ::= ".." [wfc: all tokens must be source adjacent]
+rest_pattern ::= RestOperator Identifier?
 ```
