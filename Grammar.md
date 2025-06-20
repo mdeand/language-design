@@ -5,14 +5,24 @@ This is the canonical grammar definition for Ribbon. Because Ribbon is a highly 
 ### Contents
 
 + [[#Format]]
+	* [[#General Specification Syntax]]
+	* [[#Lookahead Assertions]]
+	* [[#Character Classes]]
+	* [[#Lexical vs. Syntactic Grammar]]
 + [[#Grammar Walkthrough]]
 + [[#Definition]]
 
 ### Format
 
-We use a simple Extended Backus-Naur Form (EBNF) notation; based on the one [specified by the W3C here](https://www.w3.org/TR/xml/#sec-notation):
+#### General Specification Syntax
+We use a simple Extended Backus-Naur Form (EBNF) notation; based on the one [specified by the W3C here](https://www.w3.org/TR/xml/#sec-notation), and modified with additional regular expression conventions.
 
-Each rule in the grammar defines one symbol, in the form
+This particular notation was chosen because it is:
+1. Mostly well-specified, by a respected organization.
+2. Syntactically very similar to common Regular Expression syntax.
+
+
+Each **Production** in the grammar defines one symbol, using the following form:
 ```ebnf
 symbol ::= expression
 ```
@@ -21,7 +31,6 @@ To improve clarity for the language implementer, we use the following capitaliza
 * Leaf nodes in the AST (atomic values and names) are written in `PascalCase`. Examples include `Integer`, `String`, and `Identifier`.
 * Productions that represent compound nodes in the AST (structural rules) are written in `snake_case`. Examples include `expression`, `declaration_expr`, and `block_expr`.
 **Note**: this is slightly different than the W3C rule, which refers to terminals/non-terminals for their use of case.
-
 
 Within the expression on the right-hand side of a rule, the following expressions are used to match strings of one or more characters:
 
@@ -39,7 +48,7 @@ Within the expression on the right-hand side of a rule, the following expression
 
 * `'string'` matches a literal string matching that given inside the single quotes.
 
-* `\` is used to escape special characters.
+* [EXTENSION] `\` is used to escape special characters such as [[#Character Classes|character class patterns]].
 
 
 These symbols may be combined to match more complex patterns as follows, where `A` and `B` represent simple expressions:
@@ -54,9 +63,17 @@ These symbols may be combined to match more complex patterns as follows, where 
 
 * `A - B` matches any string that matches A but does not match B.
 
-* `A+` matches one or more occurrences of A. Concatenation has higher precedence than alternation; thus A+ | B+ is identical to (A+) | (B+).
+* `A+` matches one or more occurrences of A. Concatenation has higher precedence than alternation; thus `A+ | B+` is identical to `(A+) | (B+)`.
 
-* `A*` matches zero or more occurrences of A. Concatenation has higher precedence than alternation; thus A* | B* is identical to (A*) | (B*).
+* `A*` matches zero or more occurrences of A. Concatenation has higher precedence than alternation; thus `A* | B*` is identical to `(A*) | (B*)`.
+
+* [EXTENSION] `A{n}` where `n` is a non-negative integer, matches exactly `n` occurrences of `A` .
+
+* [EXTENSION] `A{n,}`  where `n` is a non-negative integer, matches at least `n` occurrences of `A`.  
+
+* [EXTENSION] `A{n,m}` where `n` and `m` are non-negative integers and `m >= n`, matches at least `n` and at most `m` occurrences of `A`. 
+
+* [EXTENSION] `A(?=B)`, `A(?!B)` encode [[#Lookahead Assertions]].
 
 
 Other notations used in the productions are:
@@ -65,26 +82,30 @@ Other notations used in the productions are:
 
 `[ wfc: ... ]` well-formedness constraint; this identifies by name a constraint on well-formed documents associated with a production.
 
+#### Lookahead Assertions
 
+To improve precision we extend the W3C's EBNF notation with **lookahead assertions**. This syntax represent "looking ahead" in the source stream: it attempts to match the subsequent input with the given pattern, but it does not consume any of the input; if the match is successful, the current position in the input stays the same.
 
+This extension is taken directly from existing regular expression notations, such as [the web standard detailed by MDN here](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Lookahead_assertion).
 
-This particular notation was chosen because it is:
-1. Mostly well-specified, by a respected organization.
-2. Syntactically very similar to common Regular Expression syntax.
+* `A(?=B)` matches if `A B` matches, but does not provide or consume the `B` source portion as part of its own match;  `A` is considered the actual match.
+* `A(?!B)` matches if `A` matches but `B` does not; it does not consume source beyond `A`.
 
 #### Character Classes
 
-In addition, to improve readability and properly handle Unicode, we further extend the W3C's EBNF notation with regex-style character classes based on Unicode properties.
+To improve readability and properly handle Unicode, we further extend the W3C's EBNF notation with regex-style **character classes** based on Unicode properties.
 
 Common regex character class shortcuts are used, such as `\n`; `\p{...}` syntax is used to match characters belonging to a specific Unicode general category or script.
 
 More information about character classes can be found on [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Character_classes) and [TC39](https://tc39.es/ecma262/multipage/text-processing.html#table-nonbinary-unicode-properties).
 
-##### Shortcode Legend
+##### Short-code Legend
 
-| Abb. | Hex Code |
-| ---- | -------- |
-| `\n` | `0A`     |
+| Abb. | Description                            |
+| ---- | -------------------------------------- |
+| `\n` | Ascii newline character `0A`           |
+| `\d` | Ascii digit char `[0-9]`               |
+| `\s` | Unicode whitespace **other than `\n`** |
 
 ##### `\p`-code Legend
 
@@ -104,6 +125,33 @@ More information about character classes can be found on [MDN](https://developer
 | Nd   | Decimal Digit Number   | Pf   | Final Punctuation     |      |                     |
 | Nl   | Letter Number          | Po   | Other Punctuation     |      |                     |
 | No   | Other Number           |      |                       |      |                     |
+
+#### Lexical vs. Syntactic Grammar
+
+It is important to understand the relationship between the lexer (tokenizer) and the parser in the context of this grammar. Ribbon's design deliberately keeps the lexer's role minimal.
+
+- The **Lexer** performs simple tokenization. It scans the source text and breaks it into a linear stream of the most basic tokens possible:
+  * **Punctuation**: characters the lexer reserves as single-character tokens, such as `[`, and `;`.
+  * **Linebreak**: any number of newlines that do not change the indentation level.
+  * **Indent** - any number of newlines resulting in a new, deeper level of indentation
+  * **Unindent** - any number of newlines resulting in a lower but existing level of indentation
+  * **Sequence** - operators, identifiers, literals, essentially anything that is not one of the above
+- The lexer is **not responsible** for understanding complex constructs like `Character` literals vs. Symbol literals.
+- The **Parser** consumes this stream of tokens and builds a [[Concrete Syntax Tree|Concrete Syntax Tree (CST)]].
+- A [[Concrete Syntax Tree|CST]] can then easily be trivially parsed into various [[Abstract Syntax Tree|Abstract Syntax Trees (AST)]] specified for the Ribbon meta-language, the typed language it defines, and any embedded [[Domain Specific Languages|DSL]]s created by users.
+
+Therefore, once we move beyond the basic terminals for `Punctuation`, `Sequence`s, and space handling, the EBNF productions in this document define **syntactic grammar**. Some of these are part of the core CST syntax, like `Integer` and `Symbol`; others are part of both the meta-language and the typed language, such as the constant declaration operator `:=`; and a few are specific to the typed language, like the explicitly-typed constant declaration operator `: mut expression =`. In all cases, though, they describe the valid sequences of tokens that the parser accepts. A production should be interpreted from the parser's perspective of reading its token stream. 
+
+##### Example
+
+```ebnf
+Symbol ::= "'" Sequence (?!"'")
+```
+
+This production describes the following parser behavior:
+> Match a `Punctuation` token containing a single quote, followed by a `Sequence` token, but only if the next token in the stream is not another single-quote `Punctuation` token.
+
+This approach allows the grammar to precisely specify parsing logic, including lookahead, while keeping the lexical analysis phase simple and fast.
 
 
 ---
@@ -131,7 +179,7 @@ This section walks through the grammar definition production by production for e
 
 #### Precedence Climbing
 
-As with the lexical grammar's mechanically-oriented design, the Ribbon grammar is designed for precedence climbing algorithms such as [[Pratt Parsing]]. This design choice was made in order to support robust language extension in the form of new syntax, including prefix and infix operators.
+The Ribbon grammar is designed around specific algorithms for lexical analysis and precedence climbing algorithms such as [[Pratt Parsing]]. This design choice was made in order to support robust language extension in the form of new syntax, including prefix and infix operators.
 
 
 ##### Precedence Table
@@ -181,10 +229,10 @@ A `Sequence` is simply one or more `SequenceChar` characters.
 Sequence ::= SequenceChar+
 ```
 
-An `Identifier` is any `Sequence` that is not a [[#Literals|literal]]. This broad definition is intentional and powerful. It means that traditional identifiers like `my_var`, [[LISP]]-style kebab case identifiers like `my-var`, keywords like `if`, and operators like `+` are all *[[Lexical Analysis|lexically analyzed]]* using the same rule. The distinction between them is handled later by the parser. The `-` in this rule indicates subtraction, as per the W3C EBNF notation.
+An `Identifier` is any `Sequence` that is not a [[#Literals|literal]]. This broad definition is intentional and powerful. It means that traditional identifiers like `my_var`, [[LISP]]-style kebab case identifiers like `my-var`, keywords like `if`, and operators like `+` are all [[Lexical Analysis|lexically analyzed]] using the same rule. The distinction between them is handled later by the parser.
 
 ```ebnf
-Identifier ::= Sequence - Integer
+Identifier ::= Sequence - literal
 ```
 
 
@@ -193,11 +241,7 @@ Identifier ::= Sequence - Integer
 `EscapeSequence`s can be used inside `String` and `Character` literals.
 
 ```ebnf
-UnicodeEscape ::= "u{" [A-Fa-f0-9]+ '}'
-```
-
-```
-[wfc: hex code within curly braces must be 1-6 digits]
+UnicodeEscape ::= "u{" [A-Fa-f0-9]{1,6} '}'
 ```
 
 ```ebnf
@@ -219,16 +263,24 @@ EscapeSequence ::= '\\' EscapePayload
 An `Integer` literal is, at its most basic, a sequence of one or more Unicode decimal digits. Alternative base notations are provided for convenience.
 
 ```ebnf
-Integer ::= [\p{Nd}_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
+Integer ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
 ```
 
-A `Float` literal is a compound token sequence, formed from integer literals and a dot, with an optional exponent Sequence.
+```
+[wfc: all forms must have at least one digit in at least one digit-accepting location; ie, '0b_' and '0x' are not well-formed]
+```
+
+A `Float` literal is a compound token sequence, formed from decimal literals and the dot punctuation, with an optional exponent.
+
+While this may present a slight hurdle for new users, it seems to have worked out fine for [[Rust]], so assuming we provide a similarly quality level in new user on-boarding, it should be totally manageable. While other forms may seem a minor convenience that should "obviously" be added, the grammar is intentionally kept strict here so as to avoid potential ambiguity in derived grammars. For example, [[Rust]]-like `my_tuple.0` member access requires this level of precision.
+
 ```ebnf
-Float ::= Integer '.' Integer ('e' Integer)?
+Float ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)?
 ```
 
 ```
 [wfc: all tokens must be source-adjacent]
+[wfc: all forms must have at least one digit in at least one digit-accepting location; ie `_._` and `_._e_` are not well-formed]
 ```
 
 
@@ -255,13 +307,14 @@ Character ::= "'" ( [^'\\] | EscapeSequence ) "'"
 A `Symbol` is a special literal, similar to symbols in [[LISP]] or [[Ruby]]. It is represented by a sequence of characters preceded by a single quote, where the content is longer than a single character or does not have a closing quote.
 
 ```ebnf
-Symbol ::= "'" Sequence
+Symbol ::= "'" Sequence (?!"'")
 ```
 
 ```
 [wfc: all tokens must be source-adjacent]
 ```
 
+A `Character` is a single character or escape sequence enclosed in a *matching pair* of single quotes (e.g., `'c'`), while a `Symbol` is denoted by a single leading quote followed by any `Sequence` that is not enclosed by a trailing quote (e.g., `'my-symbol`). As quotes cannot be part of a `Sequence`, they are easily differentiated mechanically.
 
 ##### Layout
 
@@ -270,33 +323,34 @@ Ribbon's syntax is sensitive to layout. `Linebreak`s can terminate expressions, 
 A `Linebreak` corresponds to a newline character.
 
 ```ebnf
-Linebreak ::= ([\p{Zs}]*\n[\p{Zs}]*)+
+Linebreak ::= (\s*\n\s*)+
 ```
 
 ```
-[wfc: indentation level after collecting last [\p{Zs}] sequence must match level before Linebreak production]
+[wfc: indentation level after collecting last \s sequence must match level before Linebreak production]
 ```
 
 An `Indent` token is generated for an increase in the current indentation level.
 
 ```ebnf
-Indent ::= ([\p{Zs}]*\n[\p{Zs}]*)+
+Indent ::= (\s*\n\s*)+
 ```
 
 ```
-[wfc: indentation level after collecting last [\p{Zs}] sequence must be greater than before Indent production]
+[wfc: indentation level after collecting last \s sequence must be greater than before Indent production]
 ```
 
 An `Unindent` token is generated for a decrease to a previous indentation level.
 
 ```ebnf
-Unindent ::= ([\p{Zs}]*\n[\p{Zs}]*)+
+Unindent ::= (\s*\n\s*)+
 ```
 
 ```
-[wfc: indentation level after collecting last [\p{Zs}] sequence must be equal to a stored level present before Unindent production]
+[wfc: indentation level after collecting last \s sequence must be equal to a stored level present before Unindent production]
 ```
 
+**Note that `Linebreak`, `Indent`, and `Unindent` share an EBNF definition.** We must rely completely on the well-formedness constraints for our mechanical specification here; the summary of which is that the lexer must be stateful, and is responsible for tracking the current indentation level. It emits the appropriate token by comparing the new line's indentation with the previous level(s) on the indentation stack.
 
 ---
 
@@ -353,8 +407,8 @@ The `declaration_operator` defines the syntax for creating a new binding.
 
 ```ebnf
 declaration_operator ::= ':='
-                      | ':' 'mut' '='
-                      | ':' 'mut' expression '='
+                       | ':' 'mut' '='
+                       | ':' 'mut' expression '='
 ```
 
 ```
@@ -419,15 +473,17 @@ expression ::= declaration_expr
 
 ```ebnf
 /* Well-formedness Constraints:
-    1. hex code within curly braces must be 1-6 digits
+    1. all forms must have at least one digit in at least one digit-accepting location;
+       '0b_', '0x', `_._` and `_._e_` are not well-formed integers or floats
     2. all tokens must be source-adjacent
-    3. indentation level after collecting last [\p{Zs}] sequence must match level before production
-    4. indentation level after collecting last [\p{Zs}] sequence must be greater than before production
-    5. indentation level after collecting last [\p{Zs}] sequence must be equal to a stored level present before production
+    3. indentation level after collecting last \s sequence must match level before production
+    4. indentation level after collecting last \s sequence must be greater than before production
+    5. indentation level after collecting last \s sequence must be equal to a stored level present before production
     6. requires typed language
 */
 
 /* Precedences:
+	NOTE: currently; without consideration of this table, the grammar is formerly abiguous. They are meant to be taken together until such time as the full set of sub-productions are well defined and we can create a cohesive hierarchy without left-recursion.
 	literal          ::= max(i16), not associative
 	block_expr       ::= max(i16), not associative
 	function_expr    ::= max(i16), not associative
@@ -442,20 +498,20 @@ Punctuation    ::= '(' | ')' | '{' | '}' | '['  | ']'
                  | '"' | "'"
 SequenceChar   ::= [^\p{Z}\p{C}] - Punctuation
 Sequence       ::= SequenceChar+
-Identifier     ::= Sequence - Integer
-UnicodeEscape  ::= "u{" [A-Fa-f0-9]+ '}' [wfc: 1]
+Identifier     ::= Sequence - literal
+UnicodeEscape  ::= "u{" [A-Fa-f0-9]{1,6} '}'
 AsciiEscape    ::= "x" [A-Fa-f0-9][A-Fa-f0-9]
 EscapePayload  ::= 'n' | 't' | 'r' | '\\' | '"' | "'" | '0'
                  | UnicodeEscape | AsciiEscape
 EscapeSequence ::= '\\' EscapePayload
-Integer        ::= [\p{Nd}_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ )
-Float          ::= Integer '.' Integer ('e' Integer)? [wfc: 2]
+Integer        ::= [0-9_]+ | ( "0x" [A-Fa-f0-9_]+ ) | ( "0b" [01_]+ ) [wfc: 1]
+Float          ::= [0-9_]+ '.' [0-9_]+ ('e' [0-9_]+)? [wfc: 1, 2]
 String         ::= '"' ( [^"\\] | EscapeSequence )* '"' [wfc: 2]
 Character      ::= "'" ( [^'\\] | EscapeSequence ) "'" [wfc: 2]
-Symbol         ::= "'" Sequence [wfc: 2]
-Linebreak      ::= ([\p{Zs}]*\n[\p{Zs}]*)+ [wfc: 3]
-Indent         ::= ([\p{Zs}]*\n[\p{Zs}]*)+ [wfc: 4]
-Unindent       ::= ([\p{Zs}]*\n[\p{Zs}]*)+ [wfc: 5]
+Symbol         ::= "'" Sequence (?!"'") [wfc: 2]
+Linebreak      ::= (\s*\n\s*)+ [wfc: 3]
+Indent         ::= (\s*\n\s*)+ [wfc: 4]
+Unindent       ::= (\s*\n\s*)+ [wfc: 5]
 
 /* Primary Expressions */
 literal       ::= Integer | Float | String | Character | Symbol
