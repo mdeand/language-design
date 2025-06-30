@@ -1,4 +1,4 @@
-This is the primary design document for *The [Ribbon](https://ribbon-lang.com) Programming Language*, a [Tiny Bow](https://tinybow.org) project.
+This is the primary design document for *[The Ribbon Programming Language](https://ribbon-lang.com)*, a [Tiny Bow](https://tinybow.org) project.
 
 
 ### Contents
@@ -7,5 +7,5 @@ This is the primary design document for *The [Ribbon](https://ribbon-lang.com) P
 * [[Grammar]]
 * [[Foundational Concepts]]
 * [[Influences]]
-* [[References]]
+* [[Resources]]
 * [[Copyright]]

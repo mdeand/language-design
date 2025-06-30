@@ -1,9 +1,10 @@
-[[The Ribbon Programming Language]]
-
 ### A Decade-Long Detour
 
+*by [noxabellus](https://noxabell.us), Founder/CEO*
 
-This is the story of how I ([noxabellus](https://noxabell.us)) arrived at the foundational design principles within Ribbon. My goal is to give you insight into the technical decisions behind it, and to ground them; not as abstract choices, but as solutions to concrete problems I have faced.
+---
+
+This is the story of how I arrived at the foundational design principles within Ribbon. My goal in including this file into the design documents is to give insight into the technical decisions behind the design, and to ground them; not as abstract choices, but as solutions to concrete problems I have faced personally.
 
 My journey with this design began nearly a decade ago, born from a deep appreciation for extensible software. I started by studying established open-source languages, initially captivated by [[Lua & Luau|Lua]]. The ideas I found in [[Terra]], however, were world-changing for me. They brought back the golden age of [[LISP]]-like metaprogramming and solidified my view of programming languages as powerful toolkits.
 

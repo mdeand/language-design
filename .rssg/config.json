@@ -8,7 +8,14 @@
     },
     "document": {
         "title": "Ribbon Language",
-        "titleSuffix": "Language Design Document"
+        "titleSuffix": "Language Design Document",
+        "image": "static/ribbon-icon.png"
     },
-    "copyright": "Copyright %c %year Tiny Bow and The Ribbon Language Contributors - Licensed under Apache 2.0"
+    "copyright": "Copyright %c %year Tiny Bow and The Ribbon Language Contributors - Licensed under Apache 2.0",
+    "scheme": {
+        "foreground": "#333",
+        "background": "#FFFFFD",
+        "overlay": "rgba(0, 0, 0, 0.15)",
+        "dark_overlay": "rgba(0, 0, 0, 0.5)"
+    }
 }
