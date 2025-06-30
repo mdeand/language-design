@@ -1,0 +1,14 @@
+{
+    "baseUrl": "design.ribbon-lang.com",
+    "pageTitle": "Ribbon Programming Language",
+    "pageTitleSuffix": "Ribbon Language",
+    "host": {
+        "title": "Tiny Bow",
+        "url": "https://tinybow.org"
+    },
+    "document": {
+        "title": "Ribbon Language",
+        "titleSuffix": "Language Design Document"
+    },
+    "copyright": "Copyright %c %year Tiny Bow and The Ribbon Language Contributors - Licensed under Apache 2.0"
+}
