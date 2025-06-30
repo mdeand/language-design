@@ -3,7 +3,7 @@ This is the canonical grammar definition for Ribbon. Because Ribbon is a highly 
 ### Contents
 
 + [[Format]]
-+ [[Grammar Walkthrough]]
++ [[Walkthrough]]
 
 
 ### Definition
