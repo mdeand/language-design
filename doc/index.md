@@ -6,6 +6,7 @@ This is the primary design document for *[The Ribbon Programming Language](https
 * [[The Road to Ribbon]]
 * [[Grammar]]
 * [[Foundational Concepts]]
+* [[Bytecode VM]]
 * [[Influences]]
 * [[Resources]]
 * [[Copyright]]
