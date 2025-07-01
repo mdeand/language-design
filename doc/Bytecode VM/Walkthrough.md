@@ -55,33 +55,33 @@ A Ribbon compiler would translate the above code into bytecode. The `with...do` 
 ;; --- Function: calculate (F_calc) ---
 ;; Expects args in r0, r1.
 calculate:
-  i_eq64c   r2, r1, 0      ;; r2 = (r1 == 0)
+  i_eq64c   r2, r1, 0       ;; r2 = (r1 == 0)
   br_if     r2, handle_zero ;; if r1 was 0, jump
-  u_div64   r0, r0, r1       ;; r0 = r0 / r1
-  return    r0             ;; return result in r0
+  u_div64   r0, r0, r1      ;; r0 = r0 / r1
+  return    r0              ;; return result in r0
 handle_zero:
-  addr_c    r0, C_d0       ;; r0 = address of 'DivisionByZero symbol
-  prompt    r0, E_ex, bytecode, 1; r0 ;; prompt for the 'throw' handler, passing the symbol
-  return    r0             ;; return result from handler (if it continues)
+  addr_c    r0, C_d0        ;; r0 = address of 'DivisionByZero symbol
+  prompt    r0, E_ex, 1; r0 ;; prompt for the 'throw' handler, passing the symbol
+  return    r0              ;; return result from handler (if it continues)
 
 ;; --- Function: main (F_main) ---
 main:
   push_set    H_ex   ;; Make the handler active
   bit_copy64c r0, 20 ;; r0 = 20
   bit_copy64c r1, 0  ;; r1 = 0
-  call_c      r0, F_calc, bytecode, 2; r0, r1 ;; r0 = calculate(r0, r1)
+  call_c      r0, F_calc, 2; r0, r1 ;; r0 = calculate(r0, r1)
 cancellation_addr:
-  pop_set                               ;; Deactivate the handler
-  call_c      _, B_prnt, builtin, 1; r0 ;; host/print_val(r0)
-  bit_copy64c r0, 0                     ;; r0 = 0
-  return      r0                        ;; implicit (trailing expression) return from main
+  pop_set                      ;; Deactivate the handler
+  call_c      _, B_prnt, 1; r0 ;; host/print_val(r0)
+  bit_copy64c r0, 0            ;; r0 = 0
+  return      r0               ;; implicit (trailing expression) return from main
 
 ;; --- Handler for Exception/throw ---
 ;; This code is part of an anonymous function referenced by H_ex.
 ;; It takes one argument (in r0), which it ignores.
 handler_exception_throw:
   bit_copy64c r0, -1 ;; Load the cancellation value into r0
-  cancel    r0       ;; Initiate cancellation
+  cancel      r0     ;; Initiate cancellation
 ```
 
 *Note*: The `cancellation.address` for the `HandlerSet` `H_ex` would point to the `pop_set` instruction at `cancellation_addr`. The `handler` entry for `E_ex` would point to `handler_exception_throw`.
@@ -150,7 +150,7 @@ The handler executes `cancel`, triggering a non-local exit.
        * It sets `Frame(main).ip` to `cancellation_addr`.
        * The handler first executes `bit_copy64c r0, -1`. Then, the `cancel r0` instruction takes this value (`-1`) and places it into the designated output register for the `with...do` block, which is `r0`.
 * **`CallStack`**: `[Frame(main)]`
-* **`ip`**: points to `cancellation_addr` (the `pop_set` instruction).
+* **`ip`**: points to `cancellation_addr` (just after the `pop_set` instruction).
 * **`Frame(main).vregs`**: `{r0: -1, ...}`
 
 ---
@@ -158,7 +158,7 @@ The handler executes `cancel`, triggering a non-local exit.
 
 Execution has resumed in `main` at the recovery point.
 
-* **Action**: `pop_set` does nothing of consequence, as the handler set was already popped during the `cancel` unwind. The VM then calls the `host/print_val` builtin, passing the value in `r0` (`-1`). The host function prints the value to the console.
+* **Action**: `pop_set` is skipped, as the handler set was already popped during the `cancel` unwind. The VM then calls the `host/print_val` builtin, passing the value in `r0` (`-1`). The host function prints the value to the console.
 
 ---
 **8. `return 0`**
