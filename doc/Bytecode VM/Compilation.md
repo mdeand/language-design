@@ -34,9 +34,11 @@ The JIT compiler is a specialized function that:
 
 The "magic" happens in the final step:
 
-**The "Swap":** After generating the native code, the JIT (or the host environment managing it) modifies the `AddressTable` within the `Header`. It finds the entry for the original `core.Function` and **replaces the pointer** to point to the new `core.AllocatedBuiltinFunction`.
+**The "Swap":** After generating the new native code, the JIT (or the host environment managing it) modifies the `AddressTable` within the `Header`. It finds the entry for the original `core.Function` and **replaces the pointer** to point to the new `core.AllocatedBuiltinFunction`.
 
 From this point on, any `call_c` instruction that uses the ID of the JIT-compiled function will be dispatched by the interpreter as a standard `builtin` call. The interpreter simply calls the function pointer; it has no knowledge that the native code it's executing was generated just moments before. This allows JIT-compiled code and interpreted code to coexist and call each other transparently.
+
+> **Note on Dynamic Calls:** This 'swap' strategy is most effective for direct, statically-known calls (via `call_c`). Handling dynamic calls (via the `call` instruction, where the function address is in a register) is more complex, as the `AddressTable` is not consulted at the call site. Ensuring that dynamically-loaded function pointers are also JIT-aware is a subject for future design and optimization.
 
 #### Handling Foreign (C) Calls
 

@@ -70,8 +70,8 @@ main:
   bit_copy64c r0, 20 ;; r0 = 20
   bit_copy64c r1, 0  ;; r1 = 0
   call_c      r0, F_calc, 2; r0, r1 ;; r0 = calculate(r0, r1)
+  pop_set                      ;; Deactivate the handler in the normal execution path
 cancellation_addr:
-  pop_set                      ;; Deactivate the handler
   call_c      _, B_prnt, 1; r0 ;; host/print_val(r0)
   bit_copy64c r0, 0            ;; r0 = 0
   return      r0               ;; implicit (trailing expression) return from main
@@ -84,7 +84,7 @@ handler_exception_throw:
   cancel      r0     ;; Initiate cancellation
 ```
 
-*Note*: The `cancellation.address` for the `HandlerSet` `H_ex` would point to the `pop_set` instruction at `cancellation_addr`. The `handler` entry for `E_ex` would point to `handler_exception_throw`.
+*Note*: The `cancellation.address` for the `HandlerSet` `H_ex` would point to the `call_c` instruction at `cancellation_addr`. The `handler` entry for `E_ex` would point to `handler_exception_throw`.
 
 ### The Walkthrough
 
@@ -147,18 +147,18 @@ The handler executes `cancel`, triggering a non-local exit.
     1. **Find Origin**: The VM inspects `Frame(handler)` and follows its `evidence` pointer to find the originating `SetFrame(H_ex)`. This `SetFrame` tells the VM that the scope to unwind to is `Frame(main)`.
     2. **Unwind Stacks**: The VM pops `Frame(handler)` and `Frame(calc)` from the `CallStack`, along with their corresponding `RegisterArray`s. It pops `SetFrame(H_ex)` from the `SetStack` and restores the `Evidence` buffer.
     3. **Transfer Control**: The VM is now back in `Frame(main)`. It looks at the `cancellation` information in `H_ex`.
-       * It sets `Frame(main).ip` to `cancellation_addr`.
        * The handler first executes `bit_copy64c r0, -1`. Then, the `cancel r0` instruction takes this value (`-1`) and places it into the designated output register for the `with...do` block, which is `r0`.
+       * It sets the `ip` of `Frame(main)` to the `cancellation.address` from `H_ex`, which points to `cancellation_addr`.
 * **`CallStack`**: `[Frame(main)]`
-* **`ip`**: points to `cancellation_addr` (just after the `pop_set` instruction).
+* **`ip`**: points to `cancellation_addr`.
 * **`Frame(main).vregs`**: `{r0: -1, ...}`
 
 ---
-**7. `pop_set` and `call_c _, B_prnt, ...`**
+**7. `call_c _, B_prnt, ...`**
 
 Execution has resumed in `main` at the recovery point.
 
-* **Action**: `pop_set` is skipped, as the handler set was already popped during the `cancel` unwind. The VM then calls the `host/print_val` builtin, passing the value in `r0` (`-1`). The host function prints the value to the console.
+* **Action**: Execution resumes at `cancellation_addr`. This address is located *after* the `pop_set` instruction. This is correct, because the `cancel` operation has already performed the stack unwinding and popped the handler set. The `pop_set` instruction is only part of the normal, non-cancellation execution path and is now correctly bypassed. The VM proceeds to call the `host/print_val` builtin, passing the value in `r0` (`-1`). The host function prints the value to the console.
 
 ---
 **8. `return 0`**
