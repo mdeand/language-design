@@ -7,7 +7,7 @@ This document provides a step-by-step walkthrough of the Ribbon VM's execution m
 Consider the following high-level Ribbon program. It defines an `Exception` effect, which can be performed by calling its `throw` operation. The `calculate` function uses this effect to signal a division-by-zero error. The `main` function calls `calculate` inside a `with...do` block that provides a handler for the `Exception` effect, catching the error and yielding a specific status code.
 
 **Ribbon Source Code:**
-```ribbon
+```
 ;; Builtin function provided by the host
 ;; "host/print_val" (prints a u64)
 

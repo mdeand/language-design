@@ -30,7 +30,7 @@ Ribbon's stack-unwinding model provides much stronger guarantees:
 
 It's important to note that Ribbon's effects are **delimited**. The `push_set` and `pop_set` instructions create a clear boundary. An effect can only be handled by a handler within its dynamic scope. This prevents the "action at a distance" problems associated with undelimited, global exception systems and provides a clear, lexical structure for developers to follow.
 
-In essence, Ribbon's effect system is not designed to be a general-purpose coroutine or continuation framework. It is a highly-optimized tool for one specific, powerful purpose: **structured, non-local control flow with static safety guarantees**. It provides the expressive power of effects without sacrificing the performance and predictability required by a true systems language.
+Ribbon's effect system is not designed to be a general-purpose coroutine or continuation framework. It is a highly-optimized tool for one specific, powerful purpose: **structured, non-local control flow with static safety guarantees**. It provides the expressive power of effects without sacrificing the performance and predictability required by a true systems language.
 
 ### The Life of an Effect
 

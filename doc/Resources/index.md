@@ -1,12 +1,12 @@
 A collection of resources that should prove useful in understanding the design of Ribbon.
 
-
 ### Contents
 
 * [[Monoidal Rows Type System]] - Examining a simple prototype of the Ribbon type system.
 
 
 ### External
+
 This is a collection of both casual and academic resources collected while doing research for Ribbon.
 
 Listing everything I've referenced in the design would be impossible, so the following are some highlights that are particularly well-written, informative, or otherwise inspiring.
