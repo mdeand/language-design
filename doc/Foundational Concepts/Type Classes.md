@@ -1,5 +1,5 @@
-Type Classes are a powerful feature for achieving ad-hoc polymorphism, a way to
-allow a function or data structure to operate on values of different types.
+**Type Classes** are a powerful feature for achieving ad-hoc polymorphism, a way
+to allow a function or data structure to operate on values of different types.
 First introduced in Haskell and now a cornerstone of languages like [[Rust]]
 (where they are called "traits"), type classes define a set of behaviors that a
 type can implement. They are like an interface, but they can be implemented for
@@ -51,11 +51,11 @@ Migratable := class From, To.
 
 Let's break down how this composition works:
 
-* **The Generic Contract:** The `Migratable` type class defines the abstract
+- **The Generic Contract:** The `Migratable` type class defines the abstract
   behavior: the ability to transform a value of an old type (`From`) into a
   value of a new type (`To`). This is the high-level, generic interface.
 
-* **The Effectful Signature:** The `migrate` function's signature isn't just
+- **The Effectful Signature:** The `migrate` function's signature isn't just
   `From -> To`. It also includes a set, or [[Row Types|Row Type]] of effects,
   `{ RemapAddress, ... }`. This is the critical link. The type class contract
   explicitly states that any implementation of `migrate` is allowed to perform
@@ -63,7 +63,7 @@ Let's break down how this composition works:
   behavior to the specific, powerful capabilities it needs from the runtime
   environment.
 
-* **The Static Guarantees:** The `From` and `To` types are not just simple
+- **The Static Guarantees:** The `From` and `To` types are not just simple
   structs. They are tagged with [[Phantom Types]] that identify which code
   version and memory region they belong to. The `Migratable` implementation is
   the bridge that allows the compiler to safely reason about a transformation

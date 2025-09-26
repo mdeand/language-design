@@ -90,8 +90,9 @@ line, with a high degree of safety.
 
 Ribbon's component design: lightweight, composable, and built on simple,
 structured allocations; is deeply inspired by
-[[modern C programming methodologies]]. I drew particular influence from the
-work of [Ryan Fleury](https://www.rfleury.com/), the philosophy of the
+[[Modern C Programming Methodologies|modern C programming methodologies]]. I
+drew particular influence from the work of
+[Ryan Fleury](https://www.rfleury.com/), the philosophy of the
 [Our Machinery](https://ruby0x1.github.io/machinery_blog_archive/) team (RIP),
 and the principles embodied by [[Zig]]. This gives Ribbon a minimal runtime,
 often requiring only a few megabytes of memory for a Fiber to execute. For

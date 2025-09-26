@@ -1,4 +1,4 @@
-Algebraic Effects (or just "effects") are a concept from programming language
+**Algebraic Effects** (or just "effects") are a concept from programming language
 theory that provides a unified way to handle and program with side effects like
 I/O, state, exceptions, and non-determinism. While the academic foundation is
 decades old, the idea has recently gained significant traction in both research
@@ -78,24 +78,24 @@ use and highly efficient when they are.
 
 The performance characteristics depend on how a handler concludes:
 
-* **Normal Continuation (Resuming an Effect):** When a handler completes its
+- **Normal Continuation (Resuming an Effect):** When a handler completes its
   task and returns a value, allowing the original code to continue, the
   operation is extremely cheap. At the virtual machine level, an effect `prompt`
   is a function call. A normal `return` from the handler is a standard function
   return. The cost is therefore equivalent to a standard, lightweight function
   call, making effects perfectly suitable for frequent, non-terminating events.
 
-* **Non-Local Exit (Cancelling an Effect):** When a handler triggers a non-local
+- **Non-Local Exit (Cancelling an Effect):** When a handler triggers a non-local
   exit via `cancel`, it initiates a destructive stack unwinding. This is where
   Ribbon's design choices yield significant performance gains over traditional
   C++ exception handling:
 
-    * **No Destructor Overhead:** Ribbon's data-oriented design and
+    - **No Destructor Overhead:** Ribbon's data-oriented design and
       oft-arena-based memory management mean there is no need to run arbitrary
       destructors for every object on the stack. The VM can simply discard the
       unwound stack frames.
       
-    * **Direct Unwinding:** Instead of relying on complex, table-driven metadata
+    - **Direct Unwinding:** Instead of relying on complex, table-driven metadata
       lookups that can cause cache misses and runtime lock contention, the VM
       performs a direct and linear walk up the stack to the handler's
       installation point. This is a simple and fast series of pointer

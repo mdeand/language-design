@@ -13,23 +13,23 @@ Ribbon is designed to meet you where you are. It provides a layered,
 high-level scripting to low-level systems programming within a single, unified
 language.
 
-* **The Scripting Layer:** At its most approachable, Ribbon can be used like a
+- **The Scripting Layer:** At its most approachable, Ribbon can be used like a
   modern, dynamically-typed scripting language. You can write simple scripts
   without ever needing to write an explicit type annotation, making it ideal for
   rapid prototyping and simple tasks.
 
-* **Gradual Static Typing:** As a project's complexity grows, you can introduce
+- **Gradual Static Typing:** As a project's complexity grows, you can introduce
   static types to functions and data structures. This brings the benefits of
   compile-time safety, robust refactoring, and better performance, allowing you
   to add rigor exactly where it's needed.
 
-* **Explicit Memory Management:** For performance-critical code, you can move
+- **Explicit Memory Management:** For performance-critical code, you can move
   beyond the default memory management and take full control using
   [[Composable Allocation Strategies]]. You can choose to allocate memory from
   specific arenas, manage lifetimes explicitly, and reason about the memory
   usage of your application, all guided and verified by the type system.
 
-* **Total Layout Control:** For the deepest level of systems programming, such
+- **Total Layout Control:** For the deepest level of systems programming, such
   as C interoperability or hardware-level data manipulation, Ribbon provides
   total control over memory layout. Using [[Structural Data]] and layout
   polymorphism, you can specify the precise bit offset and memory region of your
@@ -54,10 +54,11 @@ composed, customized, and extended by a platform developer.
   comes from the host's ability to define the guest's world. By providing
   handlers for [[Algebraic Effects]], the host application has complete
   authority over what guest code can do. For example, a host can:
-    - Provide a `FileSystem` effect handler that redirects all file access to a
+  
+    * Provide a `FileSystem` effect handler that redirects all file access to a
       virtual, sandboxed filesystem.
-    - Intercept memory `alloc` effects to enforce strict memory quotas on guest code.
-    - Expose host functionality as custom effects, creating a secure,
+    * Intercept memory `alloc` effects to enforce strict memory quotas on guest code.
+    * Expose host functionality as custom effects, creating a secure,
       high-performance bridge between the host and guest without complex FFI.
 
 - **Full Control Over the Build Process:** The build orchestrator is itself a

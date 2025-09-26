@@ -2,7 +2,7 @@ In most programming languages, we are used to thinking about the relationship
 between values and types. The value `5` has the type `Int`. The value `"hello"`
 has the type `String`. A type acts as a classifier for a set of values. But what
 if we take a step back and ask: what classifies a type? The answer to that
-question is its **kind**.
+question is its **Type Kind**.
 
 A **kind** is, essentially, the "type of a type." It describes the shape and
 arity of a type, specifically how many type parameters it takes to become a
@@ -15,22 +15,22 @@ design.
 
 Let's build this from simple examples:
 
-* A concrete type like `Int` or `String` takes zero type parameters. It is
+- A concrete type like `Int` or `String` takes zero type parameters. It is
   already a complete type that can be assigned to a value. Its kind is `Type`.
 
-* A generic type constructor like `List<T>` is not a complete type on its own.
+- A generic type constructor like `List<T>` is not a complete type on its own.
   It needs one more type—a concrete type like `Int`—to become a complete type
   (`List<Int>`). Therefore, its kind is `Type -> Type`.
 
-* A type constructor like `Map<K, V>` needs two concrete types to be complete
+- A type constructor like `Map<K, V>` needs two concrete types to be complete
   (`Map<String, Int>`). Its kind is `Type -> Type -> Type`.
 
 The kind system allows the compiler to reason about these "incomplete" types and
 ensure that they are used correctly *before* they are fully applied.
 
-#### Higher-Kinded Types (HKTs)
+#### Higher-Kinded Types
 
-This system becomes incredibly powerful when it allows for **Higher-Kinded Types (HKTs)**.
+This system becomes incredibly powerful when it allows for **Higher-Kinded Types** (HKTs).
 An HKT is a generic parameter that is itself a type constructor, not
 just a concrete type. This allows you to write abstractions over entire
 categories of types, like "anything that is a container" or "anything that
@@ -66,31 +66,31 @@ Ribbon's support for HKTs is a core part of its design philosophy, enabling it
 to bridge the gap between high-performance systems programming and high-level
 functional abstraction.
 
--   **Enabling Full Type Inference:** HKTs are fundamental to achieving robust
-    type inference in advanced type systems. When the compiler understands the
-    kinds of type constructors, it can automatically deduce the correct types in
-    generic code; even when those types are themselves parameterized by other
-    types. This means developers can write highly abstract code without needing
-    to annotate every type parameter, making code both safer and more concise.
-    Ribbon leverages HKTs to provide seamless type inference across generic
-    interfaces, allowing developers to focus on logic rather than boilerplate
-    type annotations.
+- **Enabling Full Type Inference:** HKTs are fundamental to achieving robust
+  type inference in advanced type systems. When the compiler understands the
+  kinds of type constructors, it can automatically deduce the correct types in
+  generic code; even when those types are themselves parameterized by other
+  types. This means developers can write highly abstract code without needing to
+  annotate every type parameter, making code both safer and more concise. Ribbon
+  leverages HKTs to provide seamless type inference across generic interfaces,
+  allowing developers to focus on logic rather than boilerplate type
+  annotations.
 
--   **Unparalleled Reusability:** HKTs allow library authors to write incredibly
-    generic and reusable code. You can define an interface for a whole category
-    of data structures (e.g., "all traversable containers") once, and it will
-    work for everything that fits the pattern.
+- **Unparalleled Reusability:** HKTs allow library authors to write incredibly
+  generic and reusable code. You can define an interface for a whole category of
+  data structures (e.g., "all traversable containers") once, and it will work
+  for everything that fits the pattern.
 
--   **Powerful DSL Creation:** This is a force multiplier for creating
-    [[Domain Specific Languages|DSLs]]. An internal DSL for asynchronous
-    computation, for example, can be built on abstract concepts like `Functor`.
-    This DSL will then automatically work with any data type that implements the
-    behavior, whether it's for handling optional values, lists of results, or
-    asynchronous futures.
+- **Powerful DSL Creation:** This is a force multiplier for creating
+  [[Domain Specific Languages|DSLs]]. An internal DSL for asynchronous
+  computation, for example, can be built on abstract concepts like `Functor`.
+  This DSL will then automatically work with any data type that implements the
+  behavior, whether it's for handling optional values, lists of results, or
+  asynchronous futures.
 
--   **Reducing Boilerplate:** By abstracting over common patterns, HKTs
-    drastically reduce the amount of repetitive code that needs to be written,
-    leading to more maintainable and robust software.
+- **Reducing Boilerplate:** By abstracting over common patterns, HKTs
+  drastically reduce the amount of repetitive code that needs to be written,
+  leading to more maintainable and robust software.
 
 In short, a kind system and the HKTs it enables are essential for true,
 high-level abstraction. For Ribbon, they are a key feature that allows it to

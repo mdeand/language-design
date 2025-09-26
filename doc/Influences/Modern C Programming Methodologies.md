@@ -26,6 +26,7 @@ performance.
 - **Key Idea:** Structures are just plain old data (PODs). Code is organized
   into functions that transform batches of this data, often processing
   contiguous arrays of structures to maximize cache hits.
+  
 - **Impact:** This leads to simpler, more predictable, and often dramatically
   faster code than a heavily object-oriented equivalent where data is scattered
   across memory. Ribbon's lightweight, composable component design is a direct
@@ -47,9 +48,11 @@ allocator** (also called a region or bump allocator).
 
 - **How it works:** You allocate a single, large block of memory from the
   operating system at the start of a process or frame.
+
 - **Allocating:** To allocate memory from the arena, you simply "bump" a pointer
   forward by the requested size. This is incredibly fast: often just a single
   instruction.
+
 - **Deallocating:** You don't `free` individual objects. Instead, you deallocate
   the *entire* arena at once by resetting the bump pointer to the beginning.
 
@@ -72,8 +75,10 @@ This philosophy advocates for keeping things simple and transparent.
   control flow. This means being wary of complex constructors that might
   allocate memory or heavy RAII patterns that can make the lifetime of resources
   difficult to track.
+
 - **Minimal Dependencies:** The final executable should be lean, with a minimal,
   optional runtime. You only pay for what you explicitly use.
+
 - **Simple Tooling:** The build process should be straightforward and fast.
 
 #### Relevance to Ribbon
@@ -86,10 +91,12 @@ them into first-class, safer language constructs.
   tracks the allocator that owns a piece of memory, is a formalization of the
   composable allocator pattern. It makes an implicit C convention an explicit,
   statically-checked guarantee.
+
 - **Performance:** The "near-metal speed" of Ribbon's host-side API is a direct
   result of embracing these memory management strategies. Using arenas and
   simple data structures is the key to our minimal runtime and low memory
   footprint.
+
 - **Safety and Control:** While the C approach provides raw power, it's also
   prone to segfaults. Ribbon's central design challenge was to keep this
   performance and control for host code while providing verifiable safety for

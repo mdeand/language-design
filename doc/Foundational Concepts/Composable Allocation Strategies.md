@@ -2,7 +2,7 @@ In many systems languages, memory management is a monolithic concern. You use a
 global allocator (`malloc`, `new`) for nearly everything, and while this is
 flexible, it leads to performance bottlenecks, fragmentation, and makes
 reasoning about memory lifetimes difficult. A core tenet of
-[[Modern C Programming Methodologies]]`, popularized by languages like [[Zig]],
+[[Modern C Programming Methodologies]], popularized by languages like [[Zig]],
 is the concept of **allocator passing**: functions should not reach for a global
 allocator but should instead accept an `Allocator` object as a parameter.
 
@@ -24,6 +24,7 @@ allocator parameter. Instead, their type signature declares that they perform an
 
 - **Requesting Memory:** A function that needs memory simply *requests* it from
   the environment: `let new_node = alloc(Node)`.
+  
 - **Handling the Request:** The caller provides an allocator that *handles* this
   effect for the scope of the call. For example,
   `with_allocator(my_arena, build_tree)`.

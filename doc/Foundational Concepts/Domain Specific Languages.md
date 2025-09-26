@@ -15,6 +15,7 @@ There are two main categories of DSLs:
 - **External DSLs:** These are standalone languages with their own custom
   syntax, parser, and lexer. They don't depend on another language to be
   interpreted. Classic examples are ubiquitous in computing:
+  
     * **SQL:** For querying databases.
     * **HTML/CSS:** For structuring and styling web documents.
     * **Regex:** For defining text search patterns.

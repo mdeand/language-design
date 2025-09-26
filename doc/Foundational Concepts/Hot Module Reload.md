@@ -18,10 +18,12 @@ fundamentally changing how developers build and test software.
   you can change a color, adjust the layout, or fix a bug, and the UI will
   update instantly without you having to navigate back through the entire
   wizard. The state is maintained.
+
 - **Increased Productivity & Flow:** By dramatically shortening the feedback
   loop between making a change and seeing the result, HMR helps developers stay
   "in the zone." Less time is spent waiting for compiles and restarts, and more
   time is spent on creative problem-solving.
+
 - **Rapid Iteration:** HMR is especially valuable for tasks that involve
   fine-tuning and experimentation. Game developers can tweak physics variables,
   artists can adjust shaders, and UI designers can perfect animations, all while
@@ -36,10 +38,12 @@ various domains, proving its value time and again.
   like Vite and Webpack's Hot Module Replacement allow developers to edit
   JavaScript, CSS, or UI components (e.g., in React or Vue) and see the changes
   reflected in the browser instantly, without a full page refresh.
+
 - **Game Development:** Many game engines, particularly those using scripting
   languages like Lua, have long supported script reloading. This allows
   designers to modify gameplay logic, enemy behavior, or item properties and
   test them immediately within the game world.
+  
 - **High-Availability Systems:** The Erlang/Elixir ecosystem, famous for its use
   in telecommunications and messaging, has extremely robust hot-swapping
   capabilities. It's a mission-critical feature that allows developers to patch

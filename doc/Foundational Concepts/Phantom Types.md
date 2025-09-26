@@ -1,4 +1,4 @@
-A phantom type is a type parameter that doesn't hold any data. Its sole purpose
+A **Phantom Type** is a type parameter that doesn't hold any data. Its sole purpose
 is to add extra information to a type at compile time, allowing the type checker
 to enforce more sophisticated invariants and rules about how that type can be
 used. It's a way to embed more logic and guarantees directly into the type

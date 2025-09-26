@@ -1,7 +1,8 @@
 **[Zig](https://ziglang.org)** is a modern, general-purpose systems programming
 language with a clear and pragmatic mission: to be a robust, optimal, and
 maintainable replacement for C. Its influence on Ribbon is significant,
-particularly in its formalization of [[modern C programming methodologies]] and
+particularly in its formalization of
+[[Modern C Programming Methodologies|modern C programming methodologies]] and
 its unwavering commitment to explicitness and developer control.
 
 #### What We Admire and Share

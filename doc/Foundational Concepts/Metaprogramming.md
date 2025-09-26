@@ -14,7 +14,7 @@ direct and opinionated answer to this fundamental challenge.
 
 To understand Ribbon's design, it's useful to look at the landscape of what came before:
 
-* **LISP's Unbounded Power:** LISP is the prime ancestor of modern
+- **LISP's Unbounded Power:** LISP is the prime ancestor of modern
   metaprogramming. Its homoiconic nature, where code is just a data structure
   (the list); gives it unparalleled power. Macros are just functions that
   transform lists. This is an incredibly elegant and powerful model, but its
@@ -22,20 +22,20 @@ To understand Ribbon's design, it's useful to look at the landscape of what came
   "diasporic ecosystem" where every project evolves its own dialect, making code
   difficult to share and understand.
 
-* **The C Preprocessor's Simplicity and Terror:** At the other end of the
+- **The C Preprocessor's Simplicity and Terror:** At the other end of the
   spectrum, C's preprocessor is a simple textual substitution engine. It is fast
   and straightforward, but it is also completely unaware of the language's
   syntax or type system. This makes it notoriously unsafe, leading to unexpected
   variable captures, cryptic error messages, and bugs that are incredibly
   difficult to debug.
 
-* **C++ Templates and Intractable Complexity:** C++ templates are a powerful
+- **C++ Templates and Intractable Complexity:** C++ templates are a powerful
   system for compile-time polymorphism and computation. However, template
   metaprogramming is an accidentally Turing-complete language with a notoriously
   difficult syntax and error messages that can span pages. This immense
   complexity makes it a tool for only the most expert developers.
 
-* **Rust's Safe and Stratified System:** [[Rust]] learned from these lessons and
+- **Rust's Safe and Stratified System:** [[Rust]] learned from these lessons and
   created a highly successful two-tier system. It offers simple, declarative
   macros for most use cases, and powerful, sandboxed procedural macros for more
   complex code generation. This creates strong safety guarantees by drawing a
