@@ -27,6 +27,7 @@
         buildInputs = [
           pkgs.nodejs_22
           pkgs.bashInteractive
+          pkgs.nodePackages.http-server
           rssg.packages.${system}.default
         ];
 
