@@ -43,11 +43,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1758985369,
-        "narHash": "sha256-a05JHR8O6XgXYbf+SOSP47RID+81Gd0P+BTKKal2TrE=",
+        "lastModified": 1758989149,
+        "narHash": "sha256-VjQyzuKAWmDnrCvgIjqs8hVFbN8hKEOoDQLDPxTHxgc=",
         "owner": "tiny-bow",
         "repo": "rssg",
-        "rev": "fc601fda768c8cae71152e020fd9fb8cfb6c0bcf",
+        "rev": "91fa7978fa86699d923d19b286591aa33af1cee7",
         "type": "github"
       },
       "original": {
