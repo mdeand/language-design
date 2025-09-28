@@ -149,7 +149,22 @@ there. You can even intercept memory access events to build your own virtual
 address spaces, a setup that is straightforward to implement with Ribbon's
 [[Toolkit API]].
 
+Finally, if the syntax of the language can be extended, how does the compiler
+know which "dialect" of Ribbon a file is written in? A simple file-traversal
+based compilation model is possible, but my experience with other languages has
+shown it to be counter productive at times, particularly for a multi-threaded
+compiler architecture. Additionally, if making your own [[Domain Specific Languages|DSL]]
+is a common and encouraged practice, how do we mitigate the kind of community
+fragmentation problems that have plagued [[LISP]]?
+
+The solution I chose was to address both of these issues at once: make the unit
+of compilation fully explicit. In Ribbon, code is organized into [[Modules]].
+Each module is defined by a manifest file that statically declares its source
+files, its dependencies, and the language extensions it uses. This provides the
+compiler with a predictable, static context for parsing and compiling a
+dynamically extensible language.
+
 Ribbon is the culmination of this journey. It’s a language designed to be a
-powerful, high-performance systems language for hosts, and a safe, robust, and
-easy-to-use extension language for guests, all within a single, unified
+powerful, high-performance systems language for hosts; and a safe, robust, and
+easy-to-use extension language for guests. All within a single, unified
 framework.

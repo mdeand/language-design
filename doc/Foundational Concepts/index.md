@@ -7,7 +7,8 @@ systems to implementation.
 * [[Composable Allocation Strategies]] - Fine-grained, user-controlled memory management
 * [[Domain Specific Languages]] - A first-class language for building languages
 * [[Hot Module Reloading]] - Live coding with type-safe state preservation
-* [[Metaprogramming]] - 
+* [[Metaprogramming]] - A powerful, unified, and safe system for code that writes code
+* [[Modules]] - The unit of compilation and configuration for an extensible language
 * [[Phantom Types]] - Zero-cost guarantees in the type system
 * [[Row Types]] - The unifying theory of effects and structures
 * [[Structural Data]] - Polymorphism over shape and memory layout

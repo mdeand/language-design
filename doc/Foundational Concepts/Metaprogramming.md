@@ -74,6 +74,13 @@ a dynamic language that acts as the foundational "glue" for the entire ecosystem
   provide custom syntax for a DSL, and give their users the power to safely and
   deeply integrate with the host application.
 
+- **The Source of Truth:** To manage this power and prevent the "diaspora"
+  problem seen with other powerful meta-languages, RML's extensibility is
+  managed by an explicit, static configuration layer: [[Modules]]. Each module's
+  definition file declares which language extensions are active, providing a
+  clear boundary for RML's dynamic capabilities and making the language's syntax
+  predictable and composable on a per-project basis.
+
 Ribbon's metaprogramming story is not an afterthought or an
 ad-hoc collection of tools. RML is a deliberate attempt to create a "best of all
 worlds" system: a unified, powerful, and ergonomic language for writing code
