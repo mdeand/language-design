@@ -1,48 +1,38 @@
 import { defineConfig } from 'astro/config';
 import remarkWikiLink from "@braindb/remark-wiki-link";
-import { brainDbAstro, getBrainDb } from "@braindb/astro";
 
-const bdb = getBrainDb();
-await bdb.ready();
+function normalizeSlug(slug) {
+  return slug
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-_]/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 export default defineConfig({
-  integrations: [brainDbAstro({ remarkWikiLink: false })],
+  integrations: [],
   markdown: {
     remarkPlugins: [
       [
         remarkWikiLink,
         {
           linkTemplate: ({ slug, alias }) => {
-            const [slugWithoutAnchor, anchor] = slug.split("#");
-            if (slugWithoutAnchor) {
-              const doc = bdb.documentsSync({ slug: slugWithoutAnchor })[0];
-              if (doc) {
-                if (!doc.frontmatter().draft || import.meta.env.DEV) {
-                  return {
-                    hName: "a",
-                    hProperties: {
-                      href: anchor ? `${doc.url()}#${anchor}` : doc.url(),
-                      class: doc.frontmatter().draft ? "draft-link" : "",
-                    },
-                    hChildren: [
-                      {
-                        type: "text",
-                        value:
-                          alias == null ? doc.frontmatter().title : alias,
-                      },
-                    ],
-                  };
-                }
-              }
-            }
+            const [slugWithoutAnchor, anchor] = slug.split("#")
+            const normalizedPath = `/${normalizeSlug(slugWithoutAnchor)}/`;
+            const href = anchor ? `${normalizedPath}#${anchor}` : normalizedPath;
 
             return {
-              hName: "span",
+              hName: "a",
               hProperties: {
-                class: "broken-link",
-                title: `Can't resolve link to ${slug}`,
+                href: href,
               },
-              hChildren: [{ type: "text", value: alias || slug }],
+              hChildren: [
+                {
+                  type: "text",
+                  value: alias || slug,
+                },
+              ],
             };
           },
         },

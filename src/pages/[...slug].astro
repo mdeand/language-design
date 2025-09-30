@@ -4,8 +4,10 @@ import Document from "../layout/Document.astro";
 
 export async function getStaticPaths() {
   const entries = await getCollection("docs");
+
   return entries.map((entry) => ({
-    params: { slug: entry.id },
+    // TODO(meowesque): Since the paths are only one level deep, this is a temporary fix.
+    params: { slug: entry.id.split("/")[1] ?? entry.id.split("/")[0] },
     props: entry,
   }));
 }
