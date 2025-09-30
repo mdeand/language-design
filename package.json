@@ -9,6 +9,8 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@braindb/astro": "^0.1.1",
+    "@braindb/remark-wiki-link": "^2.1.0",
     "astro": "^5.14.1"
   }
 }

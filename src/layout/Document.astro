@@ -1,0 +1,11 @@
+---
+import { type CollectionEntry } from "astro:content";
+
+type Props = CollectionEntry<"docs">["data"] & {
+  headings: { depth: number; text: string }[];
+};
+---
+
+<article>
+  <slot />
+</article>
