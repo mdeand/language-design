@@ -1,6 +1,5 @@
 import { defineConfig } from 'astro/config';
 import remarkWikiLink from "@braindb/remark-wiki-link";
-import pagefind from "astro-pagefind";
 import tailwindcss from "@tailwindcss/vite";
 import fs from 'fs';
 import path from 'path';
