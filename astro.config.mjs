@@ -78,6 +78,24 @@ function mkWikiLinkMap() {
 const wikiLinkMap = mkWikiLinkMap();
 
 const wikiLinkTemplate = ({ slug, alias }) => {
+  if (slug.startsWith('#')) {
+    const anchor = slug.substring(1);
+    const normalizedAnchor = normalizeSlug(anchor);
+    
+    return {
+      hName: "a",
+      hProperties: {
+        href: `#${normalizedAnchor}`,
+      },
+      hChildren: [
+        {
+          type: "text",
+          value: alias || anchor,
+        },
+      ],
+    };
+  }
+
   const [slugWithoutAnchor, anchor] = slug.split("#");
 
   let url = wikiLinkMap.get(slugWithoutAnchor) ||
@@ -87,7 +105,7 @@ const wikiLinkTemplate = ({ slug, alias }) => {
     url = `/${normalizeSlug(slugWithoutAnchor)}/`;
   }
 
-  const href = anchor ? `${url.replace(/\/$/, '')}#${anchor}` : url;
+  const href = anchor ? `${url.replace(/\/$/, '')}#${normalizeSlug(anchor)}` : url;
 
   return {
     hName: "a",
