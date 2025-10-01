@@ -1,6 +1,8 @@
 import { defineConfig } from 'astro/config';
 import remarkWikiLink from "@braindb/remark-wiki-link";
 
+import tailwindcss from "@tailwindcss/vite";
+
 function normalizeSlug(slug) {
   return slug
     .toLowerCase()
@@ -12,6 +14,7 @@ function normalizeSlug(slug) {
 
 export default defineConfig({
   integrations: [],
+
   markdown: {
     remarkPlugins: [
       [
@@ -39,4 +42,8 @@ export default defineConfig({
       ],
     ],
   },
+
+  vite: {
+    plugins: [tailwindcss()]
+  }
 });
