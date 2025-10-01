@@ -5,11 +5,38 @@ import Document from "../layout/Document.astro";
 export async function getStaticPaths() {
   const entries = await getCollection("docs");
 
-  return entries.map((entry) => ({
-    // TODO(meowesque): Since the paths are only one level deep, this is a temporary fix.
-    params: { slug: entry.id.split("/")[1] ?? entry.id.split("/")[0] },
-    props: entry,
-  }));
+  return entries
+    .map((entry) => {
+      function normalizeSlug(slug: string): string {
+        return slug
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9\-_]/g, "")
+          .replace(/--+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      }
+
+      let slug;
+
+      if (entry.id === "index") {
+        return null;
+      } else if (entry.id.endsWith("/index")) {
+        // NOTE(meowesque): Map directory/index to directory
+        const dirPath = entry.id.replace("/index", "");
+        slug = normalizeSlug(dirPath);
+      } else {
+        // NOTE(meowesque): Treat regular files as URL segments
+        const pathParts = entry.id.split("/");
+        const normalizedParts = pathParts.map((part) => normalizeSlug(part));
+        slug = normalizedParts.join("/");
+      }
+
+      return {
+        params: { slug },
+        props: entry,
+      };
+    })
+    .filter(Boolean);
 }
 
 type Props = CollectionEntry<"docs">;
