@@ -105,7 +105,7 @@ const wikiLinkTemplate = ({ slug, alias }) => {
 
 export default defineConfig({
   output: "static",
-  integrations: [pagefind()],
+  integrations: [],
   markdown: {
     remarkPlugins: [
       [
