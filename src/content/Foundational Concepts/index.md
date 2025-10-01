@@ -10,7 +10,7 @@ systems to implementation.
 * [[Algebraic Effects]] - Separating *What* from *How* for composable side effects
 * [[Composable Allocation Strategies]] - Fine-grained, user-controlled memory management
 * [[Domain Specific Languages]] - A first-class language for building languages
-* [[Hot Module Reloading]] - Live coding with type-safe state preservation
+* [[Hot Module Reload]] - Live coding with type-safe state preservation
 * [[Metaprogramming]] - A powerful, unified, and safe system for code that writes code
 * [[Modules]] - The unit of compilation and configuration for an extensible language
 * [[Phantom Types]] - Zero-cost guarantees in the type system

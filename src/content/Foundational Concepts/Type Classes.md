@@ -45,7 +45,7 @@ the language's other core concepts. They are the mechanism by which developers
 can write generic code that is fully aware of Ribbon's safety and concurrency
 models.
 
-The [[Hot Module Reloading]] system provides a perfect example of this synergy
+The [[Hot Module Reload]] system provides a perfect example of this synergy
 with the `Migratable` type class:
 
 ```

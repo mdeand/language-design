@@ -70,7 +70,7 @@ This architecture opens the door to a host of possibilities:
   its own private memory region, and the type system can prove it never touches
   host memory.
 
-Our [[Hot Module Reloading]] system is a great example of this.
+Our [[Hot Module Reload]] system is a great example of this.
 
 In Ribbon, an allocator is not just a source of memory; it is a compositional
 building block for creating robust, high-performance, and verifiable memory
