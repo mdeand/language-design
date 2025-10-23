@@ -1,3 +1,32 @@
-<footer>
-  
+---
+import BowSilhouette from "../graphics/BowSilhouette.astro";
+---
+
+<!-- TODO: h-48? -->
+<footer class="space-y-14">
+  <section class="section-xlines h-48 flex justify-between px-4">
+    <nav>
+      <div class="section-ylines-gradient h-full w-28 py-3 px-4 space-y-1 text-[var(--color-foreground-accent)]">
+        <span class="block text-sm">Tiny Bow</span>
+        <ol class="text-xs space-y-1">
+          <li>Sponsor</li>
+          <li>GitHub</li>
+          <li>Discord</li>
+        </ol>
+      </div>
+      <ol></ol>
+    </nav>
+    <figure
+      class="sm:flex hidden items-center section-ylines-gradient h-full hatching border-y px-9"
+    >
+      <BowSilhouette />
+    </figure>
+  </section>
+  <figcaption>
+    <p
+      class="text-center text-xs text-[var(--color-foreground-mute)]"
+    >
+      © 2025 Tiny Bow. All rights reserved.
+    </p>
+  </figcaption>
 </footer>

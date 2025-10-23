@@ -1,15 +1,42 @@
 ---
+import "../styles/global.css";
+
 import { getEntry, render } from "astro:content";
-import Document from "../layout/Document.astro";
+
+import BaseHead from "../components/BaseHead.astro";
+import IndexHeader from "../components/IndexHeader.astro";
+import Footer from "../components/Footer.astro";
+import NavBar from "../components/NavBar.astro";
 
 const indexPage = await getEntry("docs", "index");
 if (!indexPage) {
   throw new Error("Could not find index.md in content collection");
 }
 
-const { Content, headings } = await render(indexPage);
+const { Content } = await render(indexPage);
 ---
 
-<Document {...indexPage.data} headings={headings}>
-  <Content />
-</Document>
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title="Ribbon Design Document" />
+  </head>
+
+  <body class="max-w-screen overflow-x-hidden">
+    <!-- TODO(mdeand): Default is md layout, we need a layout for sm/xs devices. -->
+    <main
+      class="grid min-h-dvh grid-rows-[1fr_1px_auto_1px_auto] grid-cols-[var(--gutter-width)_minmax(0,var(--breakpoint-2xl))_var(--gutter-width)] justify-center md:mx-[var(--gutter-width)]"
+    >
+      <aside class="col-start-1 border-x hatching"></aside>
+      <section class="space-y-4 py-[var(--gutter-width)]">
+        <NavBar />
+        <IndexHeader />
+        <article id="document-body" class="px-4 pb-6">
+          <Content />
+        </article>
+        <Footer />
+      </section>
+      <aside class="col-start-3 border-x hatching"></aside>
+    </main>
+  </body>
+</html>
