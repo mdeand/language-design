@@ -1,6 +1,6 @@
 # Ribbon Language Design Documentation
 
-This is the [rssb](https://github.com/tiny-bow/rssb)-flavored markdown source
+This is the [Astro](https://astro.build)-powered markdown source
 code for the primary language design document of the Ribbon programming
 language.
 
