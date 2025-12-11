@@ -45,5 +45,7 @@ const { Content, headings } = await render(Astro.props);
 ---
 
 <Document {...Astro.props.data} headings={headings}>
-  <Content />
+  <div>
+    <Content />
+  </div>
 </Document>

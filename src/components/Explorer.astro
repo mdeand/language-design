@@ -1,0 +1,113 @@
+---
+import { getCollection } from "astro:content";
+
+interface ExplorerSection {
+  title: string;
+  href: string;
+  items: ExplorerItem[];
+}
+
+interface ExplorerItem {
+  title: string;
+  href: string;
+  children?: ExplorerItem[];
+}
+
+const allDocs = await getCollection("docs");
+const explorerSections: ExplorerSection[] = [];
+const docsByPath = new Map<string, typeof allDocs>();
+
+const indexes = [
+  { id: "the-road-to-ribbon", title: "The Road to Ribbon" },
+  { id: "grammar", title: "Grammar" },
+  { id: "foundational-concepts", title: "Foundational Concepts" },
+  { id: "bytecode-vm", title: "Bytecode VM" },
+  { id: "influences", title: "Influences" },
+  { id: "resources", title: "Resources" },
+];
+
+function normalizeSlug(slug: string): string {
+  return slug
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-_]/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Group documents by their parent directory
+allDocs.forEach((doc) => {
+  const pathParts = doc.id.split("/");
+  const parentPath = pathParts.length > 1 ? pathParts[0] : "root";
+
+  if (!docsByPath.has(parentPath)) {
+    // Initialize grouping
+    docsByPath.set(parentPath, []);
+  }
+
+  docsByPath.get(parentPath)!.push(doc);
+});
+
+// Build the explorer sections via their indexes
+indexes.forEach((index) => {
+  const sectionDocs = docsByPath.get(index.id) || [];
+  const explorerItems: ExplorerItem[] = [];
+
+  sectionDocs.forEach((doc) => {
+    // Skip index files, they are section headers
+    if (doc.id === `${index.id}/index` || doc.id === index.id) return;
+
+    const pathParts = doc.id.split("/");
+    const fileName = pathParts[pathParts.length - 1].replace(".md", "");
+
+    // NOTE(mdeand): Given that there isn't nesting yet, we can simplify href generation
+    let href;
+    if (pathParts.length === 1) {
+      href = `/${normalizeSlug(doc.id)}`;
+    } else {
+      href = `/${normalizeSlug(pathParts[0])}/${normalizeSlug(fileName)}`;
+    }
+
+    explorerItems.push({
+      title: doc.data.title,
+      href,
+    });
+  });
+
+  explorerSections.push({
+    title: index.title,
+    href: `/${normalizeSlug(index.id)}`,
+    items: explorerItems,
+  });
+});
+
+const currentPath = Astro.url.pathname;
+---
+
+<aside class="">
+  <div class="py-4">
+    {
+      explorerSections.map((section) => (
+        <div class="space-y-2 mb-6 ml-4">
+          <div class="text-[calc(var(--text-xs)*0.8)] uppercase">
+            <a href={section.href} class="text-white">
+              {section.title}
+            </a>
+          </div>
+          <div class={""}>
+            {section.items.map((item) => (
+              <div
+                class="border-l pb-0.5 border-[var(--color-background-accent)] aria-[current]:border-[var(--color-foreground-accent)] aria-[current]:text-[var(--color-foreground-accent)] pl-3 ml-0.25"
+                aria-current={currentPath === item.href ? "page" : undefined}
+              >
+                <a href={item.href} class="text-xs">
+                  {item.title}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</aside>

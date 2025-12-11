@@ -38,6 +38,10 @@ body {
   @apply list-disc;
 }
 
+#document-body {
+  
+}
+
 #document-body li::marker {
   @apply text-[var(--color-foreground-accent)];
 }

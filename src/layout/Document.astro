@@ -2,7 +2,9 @@
 import "../styles/global.css";
 
 import BaseHead from "../components/BaseHead.astro";
+import Explorer from "../components/Explorer.astro";
 import { type CollectionEntry } from "astro:content";
+import Explorer from "../components/Explorer.astro";
 
 type Props = CollectionEntry<"docs">["data"] & {
   headings: { depth: number; text: string }[];
@@ -15,9 +17,28 @@ type Props = CollectionEntry<"docs">["data"] & {
     <BaseHead title={Astro.props.title} />
   </head>
 
-  <body class="w-full min-h-screen mx-auto max-w-5xl p-4 md:p-8">
-    <article id="document-body">
-      <slot />
-    </article>
+  <body class="w-full min-h-screen">
+    <main
+      class="document-main grid min-h-dvh grid-cols-1 grid-rows-[1fr_1px_auto_1px_auto] lg:grid-cols-[var(--container-2xs)_2.5rem_minmax(0,1fr)_2.5rem] xl:grid-cols-[var(--container-2xs)_2.5rem_minmax(0,1fr)_2.5rem]"
+    >
+      <aside
+        class="relative col-start-1 row-span-full row-start-1 max-lg:hidden"
+      >
+        <Explorer />
+      </aside>
+      <div class="hatching border-x col-start-2 row-span-5 row-start-1"></div>
+      <article
+        id="document-body"
+        class="document-content relative row-start-1 grid grid-cols-subgrid lg:col-start-3"
+      >
+        <div class="relative row-start-1 grid grid-cols-subgrid lg:col-start-3">
+          <div class="px-4 pb-24 sm:px-6 xl:pr-0">
+            <slot />
+          </div>
+          <div></div>
+        </div>
+      </article>
+      <div class="hatching border-x col-start-4 row-span-5 row-start-1"></div>
+    </main>
   </body>
 </html>
