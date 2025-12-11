@@ -89,18 +89,19 @@ const currentPath = Astro.url.pathname;
     {
       explorerSections.map((section) => (
         <div class="space-y-2 mb-6 ml-4">
-          <div class="text-[calc(var(--text-xs)*0.8)] uppercase">
-            <a href={section.href} class="text-white">
+          <div class="text-[calc(var(--text-xs)*0.8)] uppercase aria-[current]:text-[var(--color-foreground-accent)] "
+            aria-current={currentPath === section.href ? "page" : undefined}>
+            <a href={section.href}>
               {section.title}
             </a>
           </div>
           <div class={""}>
             {section.items.map((item) => (
               <div
-                class="border-l pb-0.5 border-[var(--color-background-accent)] aria-[current]:border-[var(--color-foreground-accent)] aria-[current]:text-[var(--color-foreground-accent)] pl-3 ml-0.25"
+                class="border-l w-[90%] leading-3 pt-1 pb-1 border-[var(--color-background-accent)] aria-[current]:border-[var(--color-foreground-accent)] aria-[current]:text-[var(--color-foreground-accent)] pl-3 ml-0.25"
                 aria-current={currentPath === item.href ? "page" : undefined}
               >
-                <a href={item.href} class="text-xs">
+                <a href={item.href} class="text-xs text-wrap">
                   {item.title}
                 </a>
               </div>

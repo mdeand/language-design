@@ -35,11 +35,11 @@ body {
 }
 
 #document-body li {
-  @apply list-disc;
+  @apply list-disc font-body;
 }
 
-#document-body {
-  
+#document-body strong {
+  @apply font-semibold font-body text-[var(--color-foreground)];
 }
 
 #document-body li::marker {
@@ -47,11 +47,19 @@ body {
 }
 
 #document-body h3 {
-  @apply mt-4 mb-4 text-2xl font-extrabold font-display;
+  @apply mt-4 mb-4 text-5xl font-semibold font-display;
+}
+
+#document-body em {
+  @apply italic font-body;
 }
 
 #document-body ul {
   @apply pl-4 space-y-2;
+}
+
+#document-body hr {
+  @apply my-6 border-t border-[var(--color-foreground-mute)];
 }
 
 .hatching {
